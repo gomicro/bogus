@@ -17,6 +17,10 @@ func New() *Bogus {
 	return &Bogus{}
 }
 
+func (b *Bogus) Close() {
+	b.server.Close()
+}
+
 func (b *Bogus) Hits() int {
 	return b.hits
 }
