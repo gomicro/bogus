@@ -9,7 +9,7 @@ import (
 type Bogus struct {
 	server  *httptest.Server
 	hits    int
-	payload string
+	payload []byte
 	status  int
 }
 
@@ -30,8 +30,8 @@ func (b *Bogus) HostPort() (string, string) {
 	return h, p
 }
 
-func (b *Bogus) SetPayload(r string) {
-	b.payload = r
+func (b *Bogus) SetPayload(p []byte) {
+	b.payload = p
 }
 
 func (b *Bogus) SetStatus(s int) {

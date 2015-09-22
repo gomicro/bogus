@@ -21,7 +21,7 @@ func TestBogus(t *testing.T) {
 
 		g.BeforeEach(func() {
 			server = New()
-			server.SetPayload(payload)
+			server.SetPayload([]byte(payload))
 			server.SetStatus(status)
 			server.Start()
 		})
