@@ -12,7 +12,7 @@ import "github.com/gomicro/bogus"
 
 		g.BeforeEach(func(){
 			server = bogus.New()
-			server.SetPayload("some return payload")
+			server.SetPayload([]byte("some return payload"))
 			server.SetStatus(200)
 			server.Start()
 		})
