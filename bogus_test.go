@@ -26,6 +26,10 @@ func TestBogus(t *testing.T) {
 			server.Start()
 		})
 
+		g.AfterEach(func() {
+			server.Close()
+		})
+
 		g.It("should return the host and port", func() {
 			host, port := server.HostPort()
 			Expect(host).To(Equal("127.0.0.1"))
