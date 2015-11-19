@@ -90,5 +90,25 @@ func TestPaths(t *testing.T) {
 			Expect(string(body)).To(Equal(fooload))
 			Expect(server.Hits()).To(Equal(2))
 		})
+
+		g.It("should return the number of times a path has been hit", func() {
+			host, port := server.HostPort()
+			fooload := "foobar"
+			server.AddPath("/foo/bar").SetPayload([]byte(fooload))
+
+			resp, err := http.Get("http://" + net.JoinHostPort(host, port))
+			Expect(err).NotTo(HaveOccurred())
+			defer resp.Body.Close()
+
+			Expect(server.Hits()).To(Equal(1))
+			Expect(server.paths["/"].Hits()).To(Equal(1))
+
+			resp, err = http.Get("http://" + net.JoinHostPort(host, port) + "/foo/bar")
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(server.Hits()).To(Equal(2))
+			Expect(server.paths["/"].Hits()).To(Equal(1))
+			Expect(server.paths["/foo/bar"].Hits()).To(Equal(1))
+		})
 	})
 }
