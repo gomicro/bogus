@@ -39,5 +39,23 @@ func TestBogus(t *testing.T) {
 			defer resp.Body.Close()
 			Expect(server.Hits()).To(Equal(1))
 		})
+
+		g.It("should track paths hit", func() {
+			host, port := server.HostPort()
+
+			resp, err := http.Get("http://" + net.JoinHostPort(host, port))
+			Expect(err).NotTo(HaveOccurred())
+			defer resp.Body.Close()
+
+			resp, err = http.Get("http://" + net.JoinHostPort(host, port) + "/foo/bar")
+			Expect(err).NotTo(HaveOccurred())
+
+			resp, err = http.Get("http://" + net.JoinHostPort(host, port) + "/foo/bar/cool")
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(server.PathHit()).To(Equal("/"))
+			Expect(server.PathHit()).To(Equal("/foo/bar"))
+			Expect(server.PathHit()).To(Equal("/foo/bar/cool"))
+		})
 	})
 }

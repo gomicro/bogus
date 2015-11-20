@@ -7,9 +7,10 @@ import (
 )
 
 type Bogus struct {
-	server *httptest.Server
-	hits   int
-	paths  map[string]*Path
+	server   *httptest.Server
+	hits     int
+	paths    map[string]*Path
+	pathsHit chan string
 }
 
 func New() *Bogus {
@@ -31,6 +32,7 @@ func (b *Bogus) Close() {
 }
 
 func (b *Bogus) HandlePaths(w http.ResponseWriter, r *http.Request) {
+	b.pathsHit <- r.URL.Path
 	if path, ok := b.paths[r.URL.Path]; ok {
 		w.WriteHeader(path.status)
 		b.hits++
@@ -46,6 +48,10 @@ func (b *Bogus) Hits() int {
 func (b *Bogus) HostPort() (string, string) {
 	h, p, _ := net.SplitHostPort(b.server.URL[7:])
 	return h, p
+}
+
+func (b *Bogus) PathHit() string {
+	return <-b.pathsHit
 }
 
 func (b *Bogus) SetPayload(p []byte) {
@@ -64,4 +70,5 @@ func (b *Bogus) SetStatus(s int) {
 
 func (b *Bogus) Start() {
 	b.server = httptest.NewServer(http.HandlerFunc(b.HandlePaths))
+	b.pathsHit = make(chan string, 1000)
 }
