@@ -1,4 +1,6 @@
 # Bogus
+[![Build Status](https://travis-ci.org/gomicro/bogus.svg)](https://travis-ci.org/gomicro/bogus)
+
 Bogus adds a set of helper functions around Go's httptest server.
 
 # Usage
