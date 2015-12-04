@@ -48,6 +48,8 @@ func (b *Bogus) HandlePaths(w http.ResponseWriter, r *http.Request) {
 	b.hitRecords = append(b.hitRecords, HitRecord{r.Method, r.URL.Path, r.URL.Query(), bodyBytes})
 
 	var path *Path
+	var payload []byte
+	var status int
 	var ok bool
 
 	// if we have only registered the / path, use that
@@ -61,9 +63,29 @@ func (b *Bogus) HandlePaths(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	if path.hasMethod(r.Method) {
+		switch r.Method {
+		case "POST":
+			payload = bodyBytes
+			status = http.StatusAccepted
+		case "PUT":
+			payload = bodyBytes
+			status = http.StatusCreated
+		case "DELETE":
+			payload = []byte("")
+			status = http.StatusNoContent
+		case "", "GET":
+			payload = path.payload
+			status = path.status
+		}
+	} else {
+		payload = []byte("")
+		status = http.StatusForbidden
+	}
+
 	path.hits++
-	w.WriteHeader(path.status)
-	w.Write(path.payload)
+	w.WriteHeader(status)
+	w.Write(payload)
 }
 
 func (b *Bogus) Hits() int {
