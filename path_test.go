@@ -1,6 +1,7 @@
 package bogus
 
 import (
+	"bytes"
 	"io/ioutil"
 	"net"
 	"net/http"
@@ -28,156 +29,177 @@ func TestPaths(t *testing.T) {
 			host, port = server.HostPort()
 		})
 
-		g.It("should allow setting the payload for the root path", func() {
-			resp, err := http.Get("http://" + net.JoinHostPort(host, port))
-			Expect(err).NotTo(HaveOccurred())
-			defer resp.Body.Close()
+		g.Describe("Root Path", func() {
+			g.It("should allow setting the payload for the root path", func() {
+				resp, err := http.Get("http://" + net.JoinHostPort(host, port))
+				Expect(err).NotTo(HaveOccurred())
+				defer resp.Body.Close()
 
-			body, err := ioutil.ReadAll(resp.Body)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(string(body)).To(Equal(payload))
-			Expect(server.Hits()).To(Equal(1))
+				body, err := ioutil.ReadAll(resp.Body)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(string(body)).To(Equal(payload))
+				Expect(server.Hits()).To(Equal(1))
+			})
+
+			g.It("should allow setting the return status for the root path", func() {
+				resp, err := http.Get("http://" + net.JoinHostPort(host, port))
+				Expect(err).NotTo(HaveOccurred())
+				defer resp.Body.Close()
+
+				Expect(resp.StatusCode).To(Equal(status))
+				Expect(server.Hits()).To(Equal(1))
+			})
+
+			g.It("should return the root payload for all paths if it is the only registered path", func() {
+				p := "this is / payload"
+				server.SetPayload([]byte(p))
+
+				resp, err := http.Get("http://" + net.JoinHostPort(host, port))
+				Expect(err).NotTo(HaveOccurred())
+				defer resp.Body.Close()
+
+				body, err := ioutil.ReadAll(resp.Body)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(body).To(Equal([]byte(p)))
+
+				resp, err = http.Get("http://" + net.JoinHostPort(host, port) + "/foo/bar")
+				Expect(err).NotTo(HaveOccurred())
+				body, err = ioutil.ReadAll(resp.Body)
+				Expect(err).NotTo(HaveOccurred())
+				resp.Body.Close()
+				Expect(body).To(Equal([]byte(p)))
+			})
 		})
 
-		g.It("should allow setting the return status for the root path", func() {
-			resp, err := http.Get("http://" + net.JoinHostPort(host, port))
-			Expect(err).NotTo(HaveOccurred())
-			defer resp.Body.Close()
+		g.Describe("Additional Paths", func() {
+			g.It("should allow adding a new path", func() {
+				server.AddPath("/foo/bar").
+					SetStatus(http.StatusCreated)
 
-			Expect(resp.StatusCode).To(Equal(status))
-			Expect(server.Hits()).To(Equal(1))
+				resp, err := http.Get("http://" + net.JoinHostPort(host, port))
+				Expect(err).NotTo(HaveOccurred())
+				defer resp.Body.Close()
+
+				Expect(resp.StatusCode).To(Equal(status))
+				Expect(server.Hits()).To(Equal(1))
+
+				resp, err = http.Get("http://" + net.JoinHostPort(host, port) + "/foo/bar")
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(resp.StatusCode).To(Equal(http.StatusCreated))
+				Expect(server.Hits()).To(Equal(2))
+			})
+
+			g.It("should return unique payloads per path", func() {
+				p := "foobar"
+				server.AddPath("/foo/bar").
+					SetPayload([]byte(p))
+
+				resp, err := http.Get("http://" + net.JoinHostPort(host, port))
+				Expect(err).NotTo(HaveOccurred())
+				defer resp.Body.Close()
+
+				body, err := ioutil.ReadAll(resp.Body)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(string(body)).To(Equal(payload))
+				Expect(server.Hits()).To(Equal(1))
+
+				resp, err = http.Get("http://" + net.JoinHostPort(host, port) + "/foo/bar")
+				Expect(err).NotTo(HaveOccurred())
+
+				body, err = ioutil.ReadAll(resp.Body)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(string(body)).To(Equal(p))
+				Expect(server.Hits()).To(Equal(2))
+			})
+
+			g.It("should return the number of times a path has been hit", func() {
+				p := "foobar"
+				server.AddPath("/foo/bar").
+					SetPayload([]byte(p))
+
+				resp, err := http.Get("http://" + net.JoinHostPort(host, port))
+				Expect(err).NotTo(HaveOccurred())
+				defer resp.Body.Close()
+
+				Expect(server.Hits()).To(Equal(1))
+				Expect(server.paths["/"].Hits()).To(Equal(1))
+
+				resp, err = http.Get("http://" + net.JoinHostPort(host, port) + "/foo/bar")
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(server.Hits()).To(Equal(2))
+				Expect(server.paths["/"].Hits()).To(Equal(1))
+				Expect(server.paths["/foo/bar"].Hits()).To(Equal(1))
+			})
+
+			g.It("should respect registered paths when more than the root path is registered", func() {
+				payload1 := "this is / payload"
+				payload2 := "this is /foo/bar payload"
+
+				server.SetPayload([]byte(payload1))
+				server.AddPath("/foo/bar").
+					SetPayload([]byte(payload2))
+
+				resp, err := http.Get("http://" + net.JoinHostPort(host, port))
+				Expect(err).NotTo(HaveOccurred())
+				defer resp.Body.Close()
+
+				body, err := ioutil.ReadAll(resp.Body)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(string(body)).To(Equal(payload1))
+
+				resp, err = http.Get("http://" + net.JoinHostPort(host, port) + "/foo/bar")
+				Expect(err).NotTo(HaveOccurred())
+
+				body, err = ioutil.ReadAll(resp.Body)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(string(body)).To(Equal(payload2))
+			})
+
+			g.It("should return 404 on an unregistered path when there is more than one registered", func() {
+				payload1 := "this is / payload"
+				payload2 := "this is /foo/bar payload"
+
+				server.SetPayload([]byte(payload1))
+				server.AddPath("/foo/bar").
+					SetPayload([]byte(payload2))
+
+				resp, err := http.Get("http://" + net.JoinHostPort(host, port))
+				Expect(err).NotTo(HaveOccurred())
+				defer resp.Body.Close()
+
+				body, err := ioutil.ReadAll(resp.Body)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(string(body)).To(Equal(payload1))
+
+				resp, err = http.Get("http://" + net.JoinHostPort(host, port) + "/foo/bar/baz")
+				Expect(err).NotTo(HaveOccurred())
+				Expect(resp.StatusCode).To(Equal(http.StatusNotFound))
+
+				body, err = ioutil.ReadAll(resp.Body)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(string(body)).To(Equal("Not Found"))
+			})
 		})
 
-		g.It("should allow adding a new path", func() {
-			server.AddPath("/foo/bar").
-				SetStatus(http.StatusCreated)
+		g.Describe("Path Methods", func() {
+			g.It("shouldn't allow putting to a get path", func() {
+				p := "foo"
+				postData := "lowbar"
+				server.AddPath("/bar").
+					SetPayload([]byte(p))
 
-			resp, err := http.Get("http://" + net.JoinHostPort(host, port))
-			Expect(err).NotTo(HaveOccurred())
-			defer resp.Body.Close()
+				req, err := http.NewRequest("PUT", "http://"+net.JoinHostPort(host, port), bytes.NewReader([]byte(postData)))
+				Expect(err).NotTo(HaveOccurred())
 
-			Expect(resp.StatusCode).To(Equal(status))
-			Expect(server.Hits()).To(Equal(1))
+				client := &http.Client{}
+				resp, err := client.Do(req)
+				Expect(err).NotTo(HaveOccurred())
+				defer resp.Body.Close()
 
-			resp, err = http.Get("http://" + net.JoinHostPort(host, port) + "/foo/bar")
-			Expect(err).NotTo(HaveOccurred())
-
-			Expect(resp.StatusCode).To(Equal(http.StatusCreated))
-			Expect(server.Hits()).To(Equal(2))
-		})
-
-		g.It("should return unique payloads per path", func() {
-			p := "foobar"
-			server.AddPath("/foo/bar").
-				SetPayload([]byte(p))
-
-			resp, err := http.Get("http://" + net.JoinHostPort(host, port))
-			Expect(err).NotTo(HaveOccurred())
-			defer resp.Body.Close()
-
-			body, err := ioutil.ReadAll(resp.Body)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(string(body)).To(Equal(payload))
-			Expect(server.Hits()).To(Equal(1))
-
-			resp, err = http.Get("http://" + net.JoinHostPort(host, port) + "/foo/bar")
-			Expect(err).NotTo(HaveOccurred())
-
-			body, err = ioutil.ReadAll(resp.Body)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(string(body)).To(Equal(p))
-			Expect(server.Hits()).To(Equal(2))
-		})
-
-		g.It("should return the number of times a path has been hit", func() {
-			p := "foobar"
-			server.AddPath("/foo/bar").
-				SetPayload([]byte(p))
-
-			resp, err := http.Get("http://" + net.JoinHostPort(host, port))
-			Expect(err).NotTo(HaveOccurred())
-			defer resp.Body.Close()
-
-			Expect(server.Hits()).To(Equal(1))
-			Expect(server.paths["/"].Hits()).To(Equal(1))
-
-			resp, err = http.Get("http://" + net.JoinHostPort(host, port) + "/foo/bar")
-			Expect(err).NotTo(HaveOccurred())
-
-			Expect(server.Hits()).To(Equal(2))
-			Expect(server.paths["/"].Hits()).To(Equal(1))
-			Expect(server.paths["/foo/bar"].Hits()).To(Equal(1))
-		})
-
-		g.It("should return the root payload for all paths if it is the only registered path", func() {
-			p := "this is / payload"
-			server.SetPayload([]byte(p))
-
-			resp, err := http.Get("http://" + net.JoinHostPort(host, port))
-			Expect(err).NotTo(HaveOccurred())
-			defer resp.Body.Close()
-
-			body, err := ioutil.ReadAll(resp.Body)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(body).To(Equal([]byte(p)))
-
-			resp, err = http.Get("http://" + net.JoinHostPort(host, port) + "/foo/bar")
-			Expect(err).NotTo(HaveOccurred())
-			body, err = ioutil.ReadAll(resp.Body)
-			Expect(err).NotTo(HaveOccurred())
-			resp.Body.Close()
-			Expect(body).To(Equal([]byte(p)))
-		})
-
-		g.It("should respect registered paths when more than the root path is registered", func() {
-			payload1 := "this is / payload"
-			payload2 := "this is /foo/bar payload"
-
-			server.SetPayload([]byte(payload1))
-			server.AddPath("/foo/bar").
-				SetPayload([]byte(payload2))
-
-			resp, err := http.Get("http://" + net.JoinHostPort(host, port))
-			Expect(err).NotTo(HaveOccurred())
-			defer resp.Body.Close()
-
-			body, err := ioutil.ReadAll(resp.Body)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(string(body)).To(Equal(payload1))
-
-			resp, err = http.Get("http://" + net.JoinHostPort(host, port) + "/foo/bar")
-			Expect(err).NotTo(HaveOccurred())
-
-			body, err = ioutil.ReadAll(resp.Body)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(string(body)).To(Equal(payload2))
-		})
-
-		g.It("should return 404 on an unregistered path when there is more than one registered", func() {
-			payload1 := "this is / payload"
-			payload2 := "this is /foo/bar payload"
-
-			server.SetPayload([]byte(payload1))
-			server.AddPath("/foo/bar").
-				SetPayload([]byte(payload2))
-
-			resp, err := http.Get("http://" + net.JoinHostPort(host, port))
-			Expect(err).NotTo(HaveOccurred())
-			defer resp.Body.Close()
-
-			body, err := ioutil.ReadAll(resp.Body)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(string(body)).To(Equal(payload1))
-
-			resp, err = http.Get("http://" + net.JoinHostPort(host, port) + "/foo/bar/baz")
-			Expect(err).NotTo(HaveOccurred())
-			Expect(resp.StatusCode).To(Equal(http.StatusNotFound))
-
-			body, err = ioutil.ReadAll(resp.Body)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(string(body)).To(Equal("Not Found"))
-		})
-
+				Expect(resp.StatusCode).To(Equal(http.StatusForbidden))
+			})
 		})
 	})
 }
