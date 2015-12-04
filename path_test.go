@@ -110,5 +110,67 @@ func TestPaths(t *testing.T) {
 			Expect(server.paths["/"].Hits()).To(Equal(1))
 			Expect(server.paths["/foo/bar"].Hits()).To(Equal(1))
 		})
+		g.It("should return / for any path if only that is registered", func() {
+			server.SetPayload([]byte("this is / payload"))
+			host, port := server.HostPort()
+
+			resp, err := http.Get("http://" + net.JoinHostPort(host, port))
+			Expect(err).NotTo(HaveOccurred())
+			bodyBytes, err := ioutil.ReadAll(resp.Body)
+			Expect(err).NotTo(HaveOccurred())
+			resp.Body.Close()
+			Expect(bodyBytes).To(Equal([]byte("this is / payload")))
+
+			// now try with /foo/bar not registered
+			resp, err = http.Get("http://" + net.JoinHostPort(host, port) + "/foo/bar")
+			Expect(err).NotTo(HaveOccurred())
+			bodyBytes, err = ioutil.ReadAll(resp.Body)
+			Expect(err).NotTo(HaveOccurred())
+			resp.Body.Close()
+			Expect(bodyBytes).To(Equal([]byte("this is / payload")))
+		})
+		g.It("should respect registered paths", func() {
+			server.SetPayload([]byte("this is / payload"))
+			path := server.AddPath("/foo/bar")
+			path.SetPayload([]byte("this is /foo/bar payload"))
+			host, port := server.HostPort()
+
+			resp, err := http.Get("http://" + net.JoinHostPort(host, port))
+			Expect(err).NotTo(HaveOccurred())
+			bodyBytes, err := ioutil.ReadAll(resp.Body)
+			Expect(err).NotTo(HaveOccurred())
+			resp.Body.Close()
+			Expect(string(bodyBytes)).To(Equal("this is / payload"))
+
+			resp, err = http.Get("http://" + net.JoinHostPort(host, port) + "/foo/bar")
+			Expect(err).NotTo(HaveOccurred())
+			bodyBytes, err = ioutil.ReadAll(resp.Body)
+			Expect(err).NotTo(HaveOccurred())
+			resp.Body.Close()
+			Expect(string(bodyBytes)).To(Equal("this is /foo/bar payload"))
+
+		})
+		g.It("should return 404 on an unregistered path when there is more than one registration", func() {
+			server.SetPayload([]byte("this is / payload"))
+			path := server.AddPath("/foo/bar")
+			path.SetPayload([]byte("this is /foo/bar payload"))
+			host, port := server.HostPort()
+
+			resp, err := http.Get("http://" + net.JoinHostPort(host, port))
+			Expect(err).NotTo(HaveOccurred())
+			bodyBytes, err := ioutil.ReadAll(resp.Body)
+			Expect(err).NotTo(HaveOccurred())
+			resp.Body.Close()
+			Expect(string(bodyBytes)).To(Equal("this is / payload"))
+
+			resp, err = http.Get("http://" + net.JoinHostPort(host, port) + "/foo/bar/baz")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(resp.StatusCode).To(Equal(http.StatusNotFound))
+			bodyBytes, err = ioutil.ReadAll(resp.Body)
+			Expect(err).NotTo(HaveOccurred())
+			resp.Body.Close()
+			Expect(string(bodyBytes)).To(Equal("Not Found"))
+
+		})
 	})
 }

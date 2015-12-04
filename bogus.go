@@ -32,13 +32,22 @@ func (b *Bogus) Close() {
 }
 
 func (b *Bogus) HandlePaths(w http.ResponseWriter, r *http.Request) {
+	// if we've registered the given path, let's use it.
+	// if we have only registered the / path, use that
+	// if we've registered more than / and we can't find what we got hit with,
+	//    return 404
 	b.pathsHit <- r.URL.Path
-	if path, ok := b.paths[r.URL.Path]; ok {
-		w.WriteHeader(path.status)
-		b.hits++
-		path.hits++
-		w.Write(path.payload)
+	var path *Path
+	var ok bool
+	if path, ok = b.paths[r.URL.Path]; !ok {
+		if path, ok = b.paths["/"]; !ok || len(b.paths) != 1 {
+			path = &Path{[]byte("Not Found"), 1, http.StatusNotFound}
+		}
 	}
+	w.WriteHeader(path.status)
+	b.hits++
+	path.hits++
+	w.Write(path.payload)
 }
 
 func (b *Bogus) Hits() int {
