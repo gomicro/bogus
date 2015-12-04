@@ -17,36 +17,38 @@ func TestPaths(t *testing.T) {
 
 	g.Describe("Paths", func() {
 		var server *Bogus
-		var payload = "some return payload"
-		var status = http.StatusOK
 		var host, port string
 
 		g.BeforeEach(func() {
 			server = New()
-			server.SetPayload([]byte(payload))
-			server.SetStatus(status)
 			server.Start()
 			host, port = server.HostPort()
 		})
 
 		g.Describe("Root Path", func() {
 			g.It("should allow setting the payload for the root path", func() {
+				p := "some payload"
+				server.SetPayload([]byte(p))
+
 				resp, err := http.Get("http://" + net.JoinHostPort(host, port))
 				Expect(err).NotTo(HaveOccurred())
 				defer resp.Body.Close()
 
 				body, err := ioutil.ReadAll(resp.Body)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(string(body)).To(Equal(payload))
+				Expect(string(body)).To(Equal(p))
 				Expect(server.Hits()).To(Equal(1))
 			})
 
 			g.It("should allow setting the return status for the root path", func() {
+				s := http.StatusOK
+				server.SetStatus(s)
+
 				resp, err := http.Get("http://" + net.JoinHostPort(host, port))
 				Expect(err).NotTo(HaveOccurred())
 				defer resp.Body.Close()
 
-				Expect(resp.StatusCode).To(Equal(status))
+				Expect(resp.StatusCode).To(Equal(s))
 				Expect(server.Hits()).To(Equal(1))
 			})
 
@@ -73,27 +75,36 @@ func TestPaths(t *testing.T) {
 
 		g.Describe("Additional Paths", func() {
 			g.It("should allow adding a new path", func() {
+				p1 := "some other payload"
+				s1 := http.StatusOK
+				server.SetPayload([]byte(p1))
+				server.SetStatus(s1)
+
+				s2 := http.StatusCreated
 				server.AddPath("/foo/bar").
-					SetStatus(http.StatusCreated)
+					SetStatus(s2)
 
 				resp, err := http.Get("http://" + net.JoinHostPort(host, port))
 				Expect(err).NotTo(HaveOccurred())
 				defer resp.Body.Close()
 
-				Expect(resp.StatusCode).To(Equal(status))
+				Expect(resp.StatusCode).To(Equal(s1))
 				Expect(server.Hits()).To(Equal(1))
 
 				resp, err = http.Get("http://" + net.JoinHostPort(host, port) + "/foo/bar")
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(resp.StatusCode).To(Equal(http.StatusCreated))
+				Expect(resp.StatusCode).To(Equal(s2))
 				Expect(server.Hits()).To(Equal(2))
 			})
 
 			g.It("should return unique payloads per path", func() {
-				p := "foobar"
+				p1 := "some other payload"
+				server.SetPayload([]byte(p1))
+
+				p2 := "foobar"
 				server.AddPath("/foo/bar").
-					SetPayload([]byte(p))
+					SetPayload([]byte(p2))
 
 				resp, err := http.Get("http://" + net.JoinHostPort(host, port))
 				Expect(err).NotTo(HaveOccurred())
@@ -101,7 +112,7 @@ func TestPaths(t *testing.T) {
 
 				body, err := ioutil.ReadAll(resp.Body)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(string(body)).To(Equal(payload))
+				Expect(string(body)).To(Equal(p1))
 				Expect(server.Hits()).To(Equal(1))
 
 				resp, err = http.Get("http://" + net.JoinHostPort(host, port) + "/foo/bar")
@@ -109,14 +120,17 @@ func TestPaths(t *testing.T) {
 
 				body, err = ioutil.ReadAll(resp.Body)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(string(body)).To(Equal(p))
+				Expect(string(body)).To(Equal(p2))
 				Expect(server.Hits()).To(Equal(2))
 			})
 
 			g.It("should return the number of times a path has been hit", func() {
-				p := "foobar"
+				p1 := "some other payload"
+				server.SetPayload([]byte(p1))
+
+				p2 := "foobar"
 				server.AddPath("/foo/bar").
-					SetPayload([]byte(p))
+					SetPayload([]byte(p2))
 
 				resp, err := http.Get("http://" + net.JoinHostPort(host, port))
 				Expect(err).NotTo(HaveOccurred())
@@ -181,9 +195,51 @@ func TestPaths(t *testing.T) {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(string(body)).To(Equal("Not Found"))
 			})
+
+			g.It("should return 404 for root path when not registerd and additional path is registered", func() {
+				p := "root is not registered"
+				server.AddPath("/no/root").
+					SetPayload([]byte(p))
+
+				resp, err := http.Get("http://" + net.JoinHostPort(host, port))
+				Expect(err).NotTo(HaveOccurred())
+				defer resp.Body.Close()
+
+				body, err := ioutil.ReadAll(resp.Body)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(string(body)).To(Equal("Not Found"))
+				Expect(resp.StatusCode).To(Equal(http.StatusNotFound))
+				Expect(server.Hits()).To(Equal(1))
+
+				resp, err = http.Get("http://" + net.JoinHostPort(host, port) + "/no/root")
+				Expect(err).NotTo(HaveOccurred())
+
+				body, err = ioutil.ReadAll(resp.Body)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(string(body)).To(Equal(p))
+				Expect(server.Hits()).To(Equal(2))
+			})
 		})
 
 		g.Describe("Path Methods", func() {
+			g.It("should allow setting methods for paths", func() {
+				p := server.AddPath("/bar").
+					SetPayload([]byte("foo")).
+					SetMethods("GET")
+
+				Expect(len(p.methods)).To(Equal(1))
+				Expect(p.methods[0]).To(Equal("GET"))
+
+				p = server.AddPath("/barbar").
+					SetPayload([]byte("drinks")).
+					SetMethods("GET", "POST", "PUT")
+
+				Expect(len(p.methods)).To(Equal(3))
+				Expect(p.methods[0]).To(Equal("GET"))
+				Expect(p.methods[1]).To(Equal("POST"))
+				Expect(p.methods[2]).To(Equal("PUT"))
+			})
+
 			g.It("shouldn't allow putting to a get path", func() {
 				p := "foo"
 				postData := "lowbar"

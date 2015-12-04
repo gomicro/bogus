@@ -24,9 +24,9 @@ type Bogus struct {
 }
 
 func New() *Bogus {
-	return &Bogus{paths: map[string]*Path{
-		"/": &Path{},
-	}}
+	return &Bogus{
+		paths: map[string]*Path{},
+	}
 }
 
 func (b *Bogus) AddPath(path string) *Path {
@@ -42,25 +42,36 @@ func (b *Bogus) Close() {
 }
 
 func (b *Bogus) HandlePaths(w http.ResponseWriter, r *http.Request) {
-	// if we've registered the given path, let's use it.
-	// if we have only registered the / path, use that
-	// if we've registered more than / and we can't find what we got hit with,
-	//    return 404
+	b.pathsHit <- r.URL.Path
+	b.hits++
+
 	bodyBytes, _ := ioutil.ReadAll(r.Body)
 	r.Body.Close()
 	b.hitRecords = append(b.hitRecords, HitRecord{r.Method, r.URL.Path, r.URL.Query(), bodyBytes})
-	b.pathsHit <- r.URL.Path
-	var path *Path
-	var ok bool
-	if path, ok = b.paths[r.URL.Path]; !ok {
-		if path, ok = b.paths["/"]; !ok || len(b.paths) != 1 {
-			path = &Path{[]byte("Not Found"), 1, http.StatusNotFound}
+
+	var status int
+	var payload []byte
+
+	// if we have only registered the / path, use that
+	if path, ok := b.paths["/"]; ok && len(b.paths) == 1 {
+		path.hits++
+		status = path.status
+		payload = path.payload
+	} else {
+		// if we've registered the given path, let's use it.
+		// else if we've not registered a path, return 404
+		if path, ok := b.paths[r.URL.Path]; ok {
+			path.hits++
+			status = path.status
+			payload = path.payload
+		} else {
+			status = http.StatusNotFound
+			payload = []byte("Not Found")
 		}
 	}
-	w.WriteHeader(path.status)
-	b.hits++
-	path.hits++
-	w.Write(path.payload)
+
+	w.WriteHeader(status)
+	w.Write(payload)
 }
 
 func (b *Bogus) Hits() int {
@@ -81,17 +92,11 @@ func (b *Bogus) PathHit() string {
 }
 
 func (b *Bogus) SetPayload(p []byte) {
-	path := b.paths["/"]
-	if path != nil {
-		path.payload = p
-	}
+	b.AddPath("/").SetPayload(p)
 }
 
 func (b *Bogus) SetStatus(s int) {
-	path := b.paths["/"]
-	if path != nil {
-		path.status = s
-	}
+	b.AddPath("/").SetStatus(s)
 }
 
 func (b *Bogus) Start() {
