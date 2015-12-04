@@ -1,16 +1,26 @@
 package bogus
 
 import (
+	"io/ioutil"
 	"net"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 )
 
+type HitRecord struct {
+	Verb  string
+	Path  string
+	Query url.Values
+	Body  []byte
+}
+
 type Bogus struct {
-	server   *httptest.Server
-	hits     int
-	paths    map[string]*Path
-	pathsHit chan string
+	server     *httptest.Server
+	hits       int
+	paths      map[string]*Path
+	pathsHit   chan string
+	hitRecords []HitRecord
 }
 
 func New() *Bogus {
@@ -36,6 +46,9 @@ func (b *Bogus) HandlePaths(w http.ResponseWriter, r *http.Request) {
 	// if we have only registered the / path, use that
 	// if we've registered more than / and we can't find what we got hit with,
 	//    return 404
+	bodyBytes, _ := ioutil.ReadAll(r.Body)
+	r.Body.Close()
+	b.hitRecords = append(b.hitRecords, HitRecord{r.Method, r.URL.Path, r.URL.Query(), bodyBytes})
 	b.pathsHit <- r.URL.Path
 	var path *Path
 	var ok bool
@@ -52,6 +65,10 @@ func (b *Bogus) HandlePaths(w http.ResponseWriter, r *http.Request) {
 
 func (b *Bogus) Hits() int {
 	return b.hits
+}
+
+func (b *Bogus) HitRecords() []HitRecord {
+	return b.hitRecords
 }
 
 func (b *Bogus) HostPort() (string, string) {
