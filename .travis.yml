@@ -6,5 +6,5 @@ install:
   - godep restore
 
 go:
-  - 1.1
+  - 1.2
   - tip
