@@ -16,10 +16,12 @@ func TestBogus(t *testing.T) {
 
 	g.Describe("Bogus Functions", func() {
 		var server *Bogus
+		var host, port string
 
 		g.BeforeEach(func() {
 			server = New()
 			server.Start()
+			host, port = server.HostPort()
 		})
 
 		g.AfterEach(func() {
@@ -27,40 +29,18 @@ func TestBogus(t *testing.T) {
 		})
 
 		g.It("should return the host and port", func() {
-			host, port := server.HostPort()
 			Expect(host).To(Equal("127.0.0.1"))
 			Expect(port).ToNot(Equal(""))
 		})
 
 		g.It("should count hits against the server", func() {
-			host, port := server.HostPort()
-
 			resp, err := http.Get("http://" + net.JoinHostPort(host, port))
 			Expect(err).NotTo(HaveOccurred())
 			defer resp.Body.Close()
 			Expect(server.Hits()).To(Equal(1))
 		})
 
-		g.It("should track paths hit", func() {
-			host, port := server.HostPort()
-
-			resp, err := http.Get("http://" + net.JoinHostPort(host, port))
-			Expect(err).NotTo(HaveOccurred())
-			defer resp.Body.Close()
-
-			resp, err = http.Get("http://" + net.JoinHostPort(host, port) + "/foo/bar")
-			Expect(err).NotTo(HaveOccurred())
-
-			resp, err = http.Get("http://" + net.JoinHostPort(host, port) + "/foo/bar/cool")
-			Expect(err).NotTo(HaveOccurred())
-
-			Expect(server.PathHit()).To(Equal("/"))
-			Expect(server.PathHit()).To(Equal("/foo/bar"))
-			Expect(server.PathHit()).To(Equal("/foo/bar/cool"))
-		})
 		g.It("should track full hit records", func() {
-			host, port := server.HostPort()
-
 			resp, err := http.Get("http://" + net.JoinHostPort(host, port))
 			Expect(err).NotTo(HaveOccurred())
 			defer resp.Body.Close()
@@ -80,9 +60,6 @@ func TestBogus(t *testing.T) {
 			resp, err = client.Do(req)
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(server.PathHit()).To(Equal("/"))
-			Expect(server.PathHit()).To(Equal("/foo/bar"))
-			Expect(server.PathHit()).To(Equal("/foo/bar/cool"))
 			Expect(server.HitRecords()).To(HaveLen(3))
 
 			firstHit := server.HitRecords()[0]

@@ -19,14 +19,13 @@ type Bogus struct {
 	server     *httptest.Server
 	hits       int
 	paths      map[string]*Path
-	pathsHit   chan string
 	hitRecords []HitRecord
 }
 
 func New() *Bogus {
-	return &Bogus{paths: map[string]*Path{
-		"/": &Path{},
-	}}
+	return &Bogus{
+		paths: map[string]*Path{},
+	}
 }
 
 func (b *Bogus) AddPath(path string) *Path {
@@ -42,25 +41,51 @@ func (b *Bogus) Close() {
 }
 
 func (b *Bogus) HandlePaths(w http.ResponseWriter, r *http.Request) {
-	// if we've registered the given path, let's use it.
-	// if we have only registered the / path, use that
-	// if we've registered more than / and we can't find what we got hit with,
-	//    return 404
+	b.hits++
+
 	bodyBytes, _ := ioutil.ReadAll(r.Body)
 	r.Body.Close()
 	b.hitRecords = append(b.hitRecords, HitRecord{r.Method, r.URL.Path, r.URL.Query(), bodyBytes})
-	b.pathsHit <- r.URL.Path
+
 	var path *Path
+	var payload []byte
+	var status int
 	var ok bool
+
+	// if we have only registered the / path, use that
+	// else return 404 for missing paths we've not registered
 	if path, ok = b.paths[r.URL.Path]; !ok {
 		if path, ok = b.paths["/"]; !ok || len(b.paths) != 1 {
-			path = &Path{[]byte("Not Found"), 1, http.StatusNotFound}
+			path = &Path{
+				payload: []byte("Not Found"),
+				status:  http.StatusNotFound,
+			}
 		}
 	}
-	w.WriteHeader(path.status)
-	b.hits++
+
+	if path.hasMethod(r.Method) {
+		switch r.Method {
+		case "POST":
+			payload = bodyBytes
+			status = http.StatusAccepted
+		case "PUT":
+			payload = bodyBytes
+			status = http.StatusCreated
+		case "DELETE":
+			payload = []byte("")
+			status = http.StatusNoContent
+		case "", "GET":
+			payload = path.payload
+			status = path.status
+		}
+	} else {
+		payload = []byte("")
+		status = http.StatusForbidden
+	}
+
 	path.hits++
-	w.Write(path.payload)
+	w.WriteHeader(status)
+	w.Write(payload)
 }
 
 func (b *Bogus) Hits() int {
@@ -76,25 +101,14 @@ func (b *Bogus) HostPort() (string, string) {
 	return h, p
 }
 
-func (b *Bogus) PathHit() string {
-	return <-b.pathsHit
-}
-
 func (b *Bogus) SetPayload(p []byte) {
-	path := b.paths["/"]
-	if path != nil {
-		path.payload = p
-	}
+	b.AddPath("/").SetPayload(p)
 }
 
 func (b *Bogus) SetStatus(s int) {
-	path := b.paths["/"]
-	if path != nil {
-		path.status = s
-	}
+	b.AddPath("/").SetStatus(s)
 }
 
 func (b *Bogus) Start() {
 	b.server = httptest.NewServer(http.HandlerFunc(b.HandlePaths))
-	b.pathsHit = make(chan string, 1000)
 }
