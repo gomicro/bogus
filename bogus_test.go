@@ -40,22 +40,6 @@ func TestBogus(t *testing.T) {
 			Expect(server.Hits()).To(Equal(1))
 		})
 
-		g.It("should track paths hit", func() {
-			resp, err := http.Get("http://" + net.JoinHostPort(host, port))
-			Expect(err).NotTo(HaveOccurred())
-			defer resp.Body.Close()
-
-			resp, err = http.Get("http://" + net.JoinHostPort(host, port) + "/foo/bar")
-			Expect(err).NotTo(HaveOccurred())
-
-			resp, err = http.Get("http://" + net.JoinHostPort(host, port) + "/foo/bar/cool")
-			Expect(err).NotTo(HaveOccurred())
-
-			Expect(server.PathHit()).To(Equal("/"))
-			Expect(server.PathHit()).To(Equal("/foo/bar"))
-			Expect(server.PathHit()).To(Equal("/foo/bar/cool"))
-		})
-
 		g.It("should track full hit records", func() {
 			resp, err := http.Get("http://" + net.JoinHostPort(host, port))
 			Expect(err).NotTo(HaveOccurred())
@@ -76,9 +60,6 @@ func TestBogus(t *testing.T) {
 			resp, err = client.Do(req)
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(server.PathHit()).To(Equal("/"))
-			Expect(server.PathHit()).To(Equal("/foo/bar"))
-			Expect(server.PathHit()).To(Equal("/foo/bar/cool"))
 			Expect(server.HitRecords()).To(HaveLen(3))
 
 			firstHit := server.HitRecords()[0]
