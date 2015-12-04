@@ -108,7 +108,8 @@ func TestPaths(t *testing.T) {
 			Expect(server.paths["/"].Hits()).To(Equal(1))
 			Expect(server.paths["/foo/bar"].Hits()).To(Equal(1))
 		})
-		g.It("should return / for any path if only that is registered", func() {
+
+		g.It("should return the root payload for all paths if it is the only registered path", func() {
 			p := "this is / payload"
 			server.SetPayload([]byte(p))
 
@@ -127,7 +128,8 @@ func TestPaths(t *testing.T) {
 			resp.Body.Close()
 			Expect(body).To(Equal([]byte(p)))
 		})
-		g.It("should respect registered paths", func() {
+
+		g.It("should respect registered paths when more than the root path is registered", func() {
 			payload1 := "this is / payload"
 			payload2 := "this is /foo/bar payload"
 
@@ -150,7 +152,8 @@ func TestPaths(t *testing.T) {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(string(body)).To(Equal(payload2))
 		})
-		g.It("should return 404 on an unregistered path when there is more than one registration", func() {
+
+		g.It("should return 404 on an unregistered path when there is more than one registered", func() {
 			payload1 := "this is / payload"
 			payload2 := "this is /foo/bar payload"
 
