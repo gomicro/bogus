@@ -49,29 +49,23 @@ func (b *Bogus) HandlePaths(w http.ResponseWriter, r *http.Request) {
 	r.Body.Close()
 	b.hitRecords = append(b.hitRecords, HitRecord{r.Method, r.URL.Path, r.URL.Query(), bodyBytes})
 
-	var status int
-	var payload []byte
+	var path *Path
+	var ok bool
 
 	// if we have only registered the / path, use that
-	if path, ok := b.paths["/"]; ok && len(b.paths) == 1 {
-		path.hits++
-		status = path.status
-		payload = path.payload
-	} else {
-		// if we've registered the given path, let's use it.
-		// else if we've not registered a path, return 404
-		if path, ok := b.paths[r.URL.Path]; ok {
-			path.hits++
-			status = path.status
-			payload = path.payload
-		} else {
-			status = http.StatusNotFound
-			payload = []byte("Not Found")
+	// else return 404 for missing paths we've not registered
+	if path, ok = b.paths[r.URL.Path]; !ok {
+		if path, ok = b.paths["/"]; !ok || len(b.paths) != 1 {
+			path = &Path{
+				payload: []byte("Not Found"),
+				status:  http.StatusNotFound,
+			}
 		}
 	}
 
-	w.WriteHeader(status)
-	w.Write(payload)
+	path.hits++
+	w.WriteHeader(path.status)
+	w.Write(path.payload)
 }
 
 func (b *Bogus) Hits() int {
