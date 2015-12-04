@@ -33,3 +33,23 @@ func (p *Path) SetMethods(methods ...string) *Path {
 	p.methods = methods
 	return p
 }
+
+func (p *Path) hasMethod(method string) bool {
+	method = strings.ToUpper(method)
+
+	if len(p.methods) != 0 {
+		for _, m := range p.methods {
+			if m == method {
+				return true
+			}
+		}
+
+		return false
+	}
+
+	if method == "GET" {
+		return true
+	}
+
+	return false
+}

@@ -240,6 +240,51 @@ func TestPaths(t *testing.T) {
 				Expect(p.methods[2]).To(Equal("PUT"))
 			})
 
+			g.It("should return true if a path has a method", func() {
+				p := server.AddPath("/bar").
+					SetMethods("GET")
+
+				ok := p.hasMethod("GET")
+				Expect(ok).To(BeTrue())
+
+				p.SetMethods("GET", "PUT")
+
+				ok = p.hasMethod("PUT")
+				Expect(ok).To(BeTrue())
+
+				ok = p.hasMethod("GET")
+				Expect(ok).To(BeTrue())
+			})
+
+			g.It("should return true if a path has no methods and GET is checked for", func() {
+				p := server.AddPath("/bar")
+
+				ok := p.hasMethod("GET")
+				Expect(ok).To(BeTrue())
+			})
+
+			g.It("should return false if a path does not have a method", func() {
+				p := server.AddPath("/bar").
+					SetMethods("GET", "PUT")
+
+				ok := p.hasMethod("PUT")
+				Expect(ok).To(BeTrue())
+
+				ok = p.hasMethod("GET")
+				Expect(ok).To(BeTrue())
+
+				ok = p.hasMethod("POST")
+				Expect(ok).To(BeFalse())
+			})
+
+			g.It("should return false if a path has a method other than GET and GET is checked for", func() {
+				p := server.AddPath("/bar").
+					SetMethods("PUT")
+
+				ok := p.hasMethod("GET")
+				Expect(ok).To(BeFalse())
+			})
+
 			g.It("shouldn't allow putting to a get path", func() {
 				p := "foo"
 				postData := "freakazoid"
