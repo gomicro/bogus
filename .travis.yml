@@ -1,5 +1,10 @@
 language: go
 
+install:
+  - export PATH=$PATH:$HOME/gopath/bin
+  - go get github.com/tools/godep
+  - godep restore
+
 go:
   - 1.1
   - tip
