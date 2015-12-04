@@ -18,17 +18,17 @@ func TestPaths(t *testing.T) {
 		var server *Bogus
 		var payload = "some return payload"
 		var status = http.StatusOK
+		var host, port string
 
 		g.BeforeEach(func() {
 			server = New()
 			server.SetPayload([]byte(payload))
 			server.SetStatus(status)
 			server.Start()
+			host, port = server.HostPort()
 		})
 
 		g.It("should allow setting the payload for the root path", func() {
-			host, port := server.HostPort()
-
 			resp, err := http.Get("http://" + net.JoinHostPort(host, port))
 			Expect(err).NotTo(HaveOccurred())
 			defer resp.Body.Close()
@@ -40,8 +40,6 @@ func TestPaths(t *testing.T) {
 		})
 
 		g.It("should allow setting the return status for the root path", func() {
-			host, port := server.HostPort()
-
 			resp, err := http.Get("http://" + net.JoinHostPort(host, port))
 			Expect(err).NotTo(HaveOccurred())
 			defer resp.Body.Close()
@@ -51,7 +49,6 @@ func TestPaths(t *testing.T) {
 		})
 
 		g.It("should allow adding a new path", func() {
-			host, port := server.HostPort()
 			server.AddPath("/foo/bar").SetStatus(http.StatusCreated)
 
 			resp, err := http.Get("http://" + net.JoinHostPort(host, port))
@@ -69,7 +66,6 @@ func TestPaths(t *testing.T) {
 		})
 
 		g.It("should return unique payloads per path", func() {
-			host, port := server.HostPort()
 			fooload := "foobar"
 			server.AddPath("/foo/bar").SetPayload([]byte(fooload))
 
@@ -92,7 +88,6 @@ func TestPaths(t *testing.T) {
 		})
 
 		g.It("should return the number of times a path has been hit", func() {
-			host, port := server.HostPort()
 			fooload := "foobar"
 			server.AddPath("/foo/bar").SetPayload([]byte(fooload))
 
@@ -112,7 +107,6 @@ func TestPaths(t *testing.T) {
 		})
 		g.It("should return / for any path if only that is registered", func() {
 			server.SetPayload([]byte("this is / payload"))
-			host, port := server.HostPort()
 
 			resp, err := http.Get("http://" + net.JoinHostPort(host, port))
 			Expect(err).NotTo(HaveOccurred())
@@ -133,7 +127,6 @@ func TestPaths(t *testing.T) {
 			server.SetPayload([]byte("this is / payload"))
 			path := server.AddPath("/foo/bar")
 			path.SetPayload([]byte("this is /foo/bar payload"))
-			host, port := server.HostPort()
 
 			resp, err := http.Get("http://" + net.JoinHostPort(host, port))
 			Expect(err).NotTo(HaveOccurred())
@@ -154,7 +147,6 @@ func TestPaths(t *testing.T) {
 			server.SetPayload([]byte("this is / payload"))
 			path := server.AddPath("/foo/bar")
 			path.SetPayload([]byte("this is /foo/bar payload"))
-			host, port := server.HostPort()
 
 			resp, err := http.Get("http://" + net.JoinHostPort(host, port))
 			Expect(err).NotTo(HaveOccurred())
