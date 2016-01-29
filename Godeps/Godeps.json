@@ -1,0 +1,16 @@
+{
+	"ImportPath": "github.com/gomicro/bogus",
+	"GoVersion": "go1.5.2",
+	"Deps": [
+		{
+			"ImportPath": "github.com/franela/goblin",
+			"Comment": "0.0.1-58-gac712d3",
+			"Rev": "ac712d36d1b123f786cbedcfa19b5d25697a14cc"
+		},
+		{
+			"ImportPath": "github.com/onsi/gomega",
+			"Comment": "v1.0-71-g2152b45",
+			"Rev": "2152b45fa28a361beba9aab0885972323a444e28"
+		}
+	]
+}
