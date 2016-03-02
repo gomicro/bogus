@@ -41,7 +41,7 @@ func TestPaths(t *testing.T) {
 			})
 
 			g.It("should allow setting the return status for the root path", func() {
-				s := http.StatusOK
+				s := http.StatusTeapot
 				server.SetStatus(s)
 
 				resp, err := http.Get("http://" + net.JoinHostPort(host, port))
