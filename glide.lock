@@ -1,15 +1,16 @@
-hash: 778be60b760a7d34b90aba91d6b9881a57b4d9db088d0b66a39923ccda829bf4
-updated: 2016-10-25T04:49:32.69530588Z
+hash: 9f3a65118304c63d91cabe0e25623025bfd208da770eff1ef8fe65d81f016dec
+updated: 2016-10-24T22:34:48.673460774-07:00
 imports: []
 testImports:
 - name: github.com/franela/goblin
-  version: 74c9fe110d4bfd04c222a089a309e0a97e258534
+  version: efa9910a3ea4ccb7ee4b977571318af2e51ba05f
 - name: github.com/onsi/gomega
-  version: a78ae492d53aad5a7a232d0d0462c14c400e3ee7
+  version: 2152b45fa28a361beba9aab0885972323a444e28
   subpackages:
   - format
   - internal/assertion
   - internal/asyncassertion
+  - internal/oraclematcher
   - internal/testingtsupport
   - matchers
   - matchers/support/goraph/bipartitegraph

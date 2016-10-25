@@ -2,6 +2,4 @@ package: github.com/gomicro/bogus
 import: []
 testImport:
 - package: github.com/franela/goblin
-  version: 0.0.1
 - package: github.com/onsi/gomega
-  version: v1.0
