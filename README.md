@@ -8,7 +8,8 @@ Bogus adds a set of helper functions around Go's httptest server.
 # Usage
 
 Setting a payload and status against a root path
-```go
+
+```
 import "github.com/gomicro/bogus"
 
 ...
@@ -34,7 +35,8 @@ import "github.com/gomicro/bogus"
 ```
 
 Setting a payload and status against a specific path
-```go
+
+```
 import "github.com/gomicro/bogus"
 
 ...
