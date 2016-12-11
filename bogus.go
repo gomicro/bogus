@@ -8,6 +8,8 @@ import (
 	"net/url"
 )
 
+// HitRecord represents a recording of information from a single hit againstr
+// the bogus server
 type HitRecord struct {
 	Verb  string
 	Path  string
@@ -15,6 +17,7 @@ type HitRecord struct {
 	Body  []byte
 }
 
+// Bogus represents a test server
 type Bogus struct {
 	server     *httptest.Server
 	hits       int
@@ -22,12 +25,15 @@ type Bogus struct {
 	hitRecords []HitRecord
 }
 
+// New returns a newly intitated bogus server
 func New() *Bogus {
 	return &Bogus{
 		paths: map[string]*Path{},
 	}
 }
 
+// AddPath adds a new path to the bogus server handler and returns the new path
+// for further configuration
 func (b *Bogus) AddPath(path string) *Path {
 	if _, ok := b.paths[path]; !ok {
 		b.paths[path] = &Path{}
@@ -36,10 +42,13 @@ func (b *Bogus) AddPath(path string) *Path {
 	return b.paths[path]
 }
 
+// Close calls the close method for the underlying httptest server
 func (b *Bogus) Close() {
 	b.server.Close()
 }
 
+// HandlePaths implements the http handler interface and decides how to respond
+// based on the paths configured
 func (b *Bogus) HandlePaths(w http.ResponseWriter, r *http.Request) {
 	b.hits++
 
@@ -92,27 +101,35 @@ func (b *Bogus) HandlePaths(w http.ResponseWriter, r *http.Request) {
 	w.Write(payload)
 }
 
+// Hits returns the total number of hits seen against the bogus server
 func (b *Bogus) Hits() int {
 	return b.hits
 }
 
+// HitRecords returns a slice of the hit records recorded for inspection
 func (b *Bogus) HitRecords() []HitRecord {
 	return b.hitRecords
 }
 
+// HostPort returns the host and port number of the bogus server
 func (b *Bogus) HostPort() (string, string) {
 	h, p, _ := net.SplitHostPort(b.server.URL[7:])
 	return h, p
 }
 
+// SetPayload is a convenience function allowing shorthand configuration of the
+// payload for the default path
 func (b *Bogus) SetPayload(p []byte) {
 	b.AddPath("/").SetPayload(p)
 }
 
+// SetStatus is a convenience function allowing shorthand configuration of the
+// status for the default path
 func (b *Bogus) SetStatus(s int) {
 	b.AddPath("/").SetStatus(s)
 }
 
+// Start initializes the bogus server and sets it to handle the configured paths
 func (b *Bogus) Start() {
 	b.server = httptest.NewServer(http.HandlerFunc(b.HandlePaths))
 }
