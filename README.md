@@ -1,14 +1,16 @@
 # Bogus
 [![Build Status](https://travis-ci.org/gomicro/bogus.svg)](https://travis-ci.org/gomicro/bogus)
 [![Coverage](http://gocover.io/_badge/github.com/gomicro/bogus)](http://gocover.io/github.com/gomicro/bogus)
+[![Go Reportcard](https://goreportcard.com/badge/github.com/gomicro/bogus)](https://goreportcard.com/report/github.com/gomicro/bogus)
 [![GoDoc](https://godoc.org/github.com/gomicro/bogus?status.png)](https://godoc.org/github.com/gomicro/bogus)
 
-Bogus adds a set of helper functions around Go's httptest server.
+Bogus simplifies the creation of a mocked http server using the `net/http/httptest` package.  It allows the creation of one to many endpoints with unique responses.  The interactions of each endpoint are recorded for assertions.
 
 # Usage
 
 Setting a payload and status against a root path
-```go
+
+```
 import "github.com/gomicro/bogus"
 
 ...
@@ -34,7 +36,8 @@ import "github.com/gomicro/bogus"
 ```
 
 Setting a payload and status against a specific path
-```go
+
+```
 import "github.com/gomicro/bogus"
 
 ...
