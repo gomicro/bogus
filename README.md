@@ -1,6 +1,7 @@
 # Bogus
 [![Build Status](https://travis-ci.org/gomicro/bogus.svg)](https://travis-ci.org/gomicro/bogus)
 [![Coverage](http://gocover.io/_badge/github.com/gomicro/bogus)](http://gocover.io/github.com/gomicro/bogus)
+[![Go Reportcard](https://goreportcard.com/badge/github.com/gomicro/bogus)](https://goreportcard.com/report/github.com/gomicro/bogus)
 [![GoDoc](https://godoc.org/github.com/gomicro/bogus?status.png)](https://godoc.org/github.com/gomicro/bogus)
 
 Bogus adds a set of helper functions around Go's httptest server.
