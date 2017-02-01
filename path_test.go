@@ -309,7 +309,7 @@ func TestPaths(t *testing.T) {
 				postData := "live long and prosper"
 				server.AddPath("/force").
 					SetPayload([]byte(p)).
-					SetStatus(http.StatusOK).
+					SetStatus(http.StatusCreated).
 					SetMethods("PUT")
 
 				req, err := http.NewRequest("PUT", "http://"+net.JoinHostPort(host, port)+"/force", bytes.NewReader([]byte(postData)))
