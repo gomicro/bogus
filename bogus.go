@@ -85,11 +85,15 @@ func (b *Bogus) HandlePaths(w http.ResponseWriter, r *http.Request) {
 			status = http.StatusNoContent
 		case "", "GET":
 			payload = path.payload
-			if path.status != 0 {
-				status = path.status
-			} else {
-				status = http.StatusOK
-			}
+			status = http.StatusOK
+		}
+
+		// Prefer set payload and status over default
+		if path.payload != nil {
+			payload = path.payload
+		}
+		if path.status != 0 {
+			status = path.status
 		}
 	} else {
 		payload = []byte("")
