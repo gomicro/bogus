@@ -322,6 +322,25 @@ func TestPaths(t *testing.T) {
 
 				Expect(resp.StatusCode).To(Equal(http.StatusCreated))
 			})
+
+			g.It("should return a default status and payload", func() {
+				postData := []byte("topgear")
+				server.AddPath("/roadkill").
+					SetMethods("PUT")
+
+				req, err := http.NewRequest("PUT", "http://"+net.JoinHostPort(host, port)+"/roadkill", bytes.NewReader(postData))
+				Expect(err).NotTo(HaveOccurred())
+
+				client := &http.Client{}
+				resp, err := client.Do(req)
+				Expect(err).NotTo(HaveOccurred())
+				defer resp.Body.Close()
+
+				Expect(resp.StatusCode).To(Equal(http.StatusCreated))
+				respBody, err := ioutil.ReadAll(resp.Body)
+				Expect(err).To(BeNil())
+				Expect(respBody).To(Equal(postData))
+			})
 		})
 	})
 }
