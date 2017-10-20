@@ -1,4 +1,4 @@
-package bogus
+package paths
 
 import (
 	"strings"
@@ -6,28 +6,23 @@ import (
 
 // Path represents an endpoint added to a bogus server and how it should respond
 type Path struct {
-	payload []byte
-	hits    int
-	status  int
+	Payload []byte
+	Hits    int
+	Status  int
 	methods []string
-}
-
-// Hits returns the number of hits recorded for the path
-func (p *Path) Hits() int {
-	return p.hits
 }
 
 // SetPayload sets the response payload for the path and returns the path for
 // additional configuration
 func (p *Path) SetPayload(payload []byte) *Path {
-	p.payload = payload
+	p.Payload = payload
 	return p
 }
 
 // SetStatus sets the http status for the path and returns the path for
 // additional configuration
 func (p *Path) SetStatus(status int) *Path {
-	p.status = status
+	p.Status = status
 	return p
 }
 
@@ -41,7 +36,7 @@ func (p *Path) SetMethods(methods ...string) *Path {
 	return p
 }
 
-func (p *Path) hasMethod(method string) bool {
+func (p *Path) HasMethod(method string) bool {
 	method = strings.ToUpper(method)
 
 	// Check for configured methods first
