@@ -41,7 +41,7 @@ func New() *Bogus {
 // for further configuration
 func (b *Bogus) AddPath(path string) *paths.Path {
 	if _, ok := b.paths[path]; !ok {
-		b.paths[path] = &paths.Path{}
+		b.paths[path] = paths.New()
 	}
 
 	return b.paths[path]

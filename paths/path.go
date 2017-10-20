@@ -12,6 +12,12 @@ type Path struct {
 	methods []string
 }
 
+// New returns a newly instantiated path object with everything initialized as
+// needed.
+func New() *Path {
+	return &Path{}
+}
+
 // SetPayload sets the response payload for the path and returns the path for
 // additional configuration
 func (p *Path) SetPayload(payload []byte) *Path {
