@@ -27,9 +27,12 @@ type Bogus struct {
 
 // New returns a newly intitated bogus server
 func New() *Bogus {
-	return &Bogus{
+	b := &Bogus{
 		paths: map[string]*Path{},
 	}
+	b.server = httptest.NewServer(http.HandlerFunc(b.HandlePaths))
+
+	return b
 }
 
 // AddPath adds a new path to the bogus server handler and returns the new path
@@ -54,25 +57,20 @@ func (b *Bogus) HandlePaths(w http.ResponseWriter, r *http.Request) {
 
 	bodyBytes, _ := ioutil.ReadAll(r.Body)
 	r.Body.Close()
+
 	b.hitRecords = append(b.hitRecords, HitRecord{r.Method, r.URL.Path, r.URL.Query(), bodyBytes})
 
-	var path *Path
-	var payload []byte
-	var status int
-	var ok bool
-
-	// if we have only registered the / path, use that
-	// else return 404 for missing paths we've not registered
-	if path, ok = b.paths[r.URL.Path]; !ok {
-		if path, ok = b.paths["/"]; !ok || len(b.paths) != 1 {
-			path = &Path{
-				payload: []byte("Not Found"),
-				status:  http.StatusNotFound,
-			}
-		}
+	path, ok := b.paths[r.URL.Path]
+	if !ok {
+		w.WriteHeader(http.StatusNotFound)
+		w.Write([]byte("Not Found"))
+		return
 	}
 
 	if path.hasMethod(r.Method) {
+		var payload []byte
+		var status int
+
 		switch r.Method {
 		case "POST":
 			payload = bodyBytes
@@ -95,14 +93,16 @@ func (b *Bogus) HandlePaths(w http.ResponseWriter, r *http.Request) {
 		if path.status != 0 {
 			status = path.status
 		}
-	} else {
-		payload = []byte("")
-		status = http.StatusForbidden
+
+		path.hits++
+		w.WriteHeader(status)
+		w.Write(payload)
+		return
 	}
 
-	path.hits++
-	w.WriteHeader(status)
-	w.Write(payload)
+	w.WriteHeader(http.StatusForbidden)
+	w.Write([]byte(""))
+	return
 }
 
 // Hits returns the total number of hits seen against the bogus server
@@ -119,21 +119,4 @@ func (b *Bogus) HitRecords() []HitRecord {
 func (b *Bogus) HostPort() (string, string) {
 	h, p, _ := net.SplitHostPort(b.server.URL[7:])
 	return h, p
-}
-
-// SetPayload is a convenience function allowing shorthand configuration of the
-// payload for the default path
-func (b *Bogus) SetPayload(p []byte) {
-	b.AddPath("/").SetPayload(p)
-}
-
-// SetStatus is a convenience function allowing shorthand configuration of the
-// status for the default path
-func (b *Bogus) SetStatus(s int) {
-	b.AddPath("/").SetStatus(s)
-}
-
-// Start initializes the bogus server and sets it to handle the configured paths
-func (b *Bogus) Start() {
-	b.server = httptest.NewServer(http.HandlerFunc(b.HandlePaths))
 }

@@ -20,7 +20,6 @@ func TestBogus(t *testing.T) {
 
 		g.BeforeEach(func() {
 			server = New()
-			server.Start()
 			host, port = server.HostPort()
 		})
 
