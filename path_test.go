@@ -21,68 +21,16 @@ func TestPaths(t *testing.T) {
 
 		g.BeforeEach(func() {
 			server = New()
-			server.Start()
 			host, port = server.HostPort()
-		})
-
-		g.Describe("Root Path", func() {
-			g.It("should allow setting the payload for the root path", func() {
-				p := "some payload"
-				server.SetPayload([]byte(p))
-
-				resp, err := http.Get("http://" + net.JoinHostPort(host, port))
-				Expect(err).NotTo(HaveOccurred())
-				defer resp.Body.Close()
-
-				body, err := ioutil.ReadAll(resp.Body)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(string(body)).To(Equal(p))
-				Expect(server.Hits()).To(Equal(1))
-			})
-
-			g.It("should allow setting the return status for the root path", func() {
-				s := http.StatusTeapot
-				server.SetStatus(s)
-
-				resp, err := http.Get("http://" + net.JoinHostPort(host, port))
-				Expect(err).NotTo(HaveOccurred())
-				defer resp.Body.Close()
-
-				Expect(resp.StatusCode).To(Equal(s))
-				Expect(server.Hits()).To(Equal(1))
-			})
-
-			g.It("should return the root payload for all paths if it is the only registered path", func() {
-				p := "this is / payload"
-				server.SetPayload([]byte(p))
-
-				resp, err := http.Get("http://" + net.JoinHostPort(host, port))
-				Expect(err).NotTo(HaveOccurred())
-				defer resp.Body.Close()
-
-				body, err := ioutil.ReadAll(resp.Body)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(body).To(Equal([]byte(p)))
-
-				resp, err = http.Get("http://" + net.JoinHostPort(host, port) + "/foo/bar")
-				Expect(err).NotTo(HaveOccurred())
-				body, err = ioutil.ReadAll(resp.Body)
-				Expect(err).NotTo(HaveOccurred())
-				resp.Body.Close()
-				Expect(body).To(Equal([]byte(p)))
-			})
 		})
 
 		g.Describe("Additional Paths", func() {
 			g.It("should allow adding a new path", func() {
 				p1 := "some other payload"
 				s1 := http.StatusOK
-				server.SetPayload([]byte(p1))
-				server.SetStatus(s1)
-
-				s2 := http.StatusCreated
-				server.AddPath("/foo/bar").
-					SetStatus(s2)
+				server.AddPath("/").
+					SetPayload([]byte(p1)).
+					SetStatus(s1)
 
 				resp, err := http.Get("http://" + net.JoinHostPort(host, port))
 				Expect(err).NotTo(HaveOccurred())
@@ -90,17 +38,12 @@ func TestPaths(t *testing.T) {
 
 				Expect(resp.StatusCode).To(Equal(s1))
 				Expect(server.Hits()).To(Equal(1))
-
-				resp, err = http.Get("http://" + net.JoinHostPort(host, port) + "/foo/bar")
-				Expect(err).NotTo(HaveOccurred())
-
-				Expect(resp.StatusCode).To(Equal(s2))
-				Expect(server.Hits()).To(Equal(2))
 			})
 
 			g.It("should return unique payloads per path", func() {
 				p1 := "some other payload"
-				server.SetPayload([]byte(p1))
+				server.AddPath("/").
+					SetPayload([]byte(p1))
 
 				p2 := "foobar"
 				server.AddPath("/foo/bar").
@@ -126,7 +69,8 @@ func TestPaths(t *testing.T) {
 
 			g.It("should return the number of times a path has been hit", func() {
 				p1 := "some other payload"
-				server.SetPayload([]byte(p1))
+				server.AddPath("/").
+					SetPayload([]byte(p1))
 
 				p2 := "foobar"
 				server.AddPath("/foo/bar").
@@ -151,7 +95,8 @@ func TestPaths(t *testing.T) {
 				payload1 := "this is / payload"
 				payload2 := "this is /foo/bar payload"
 
-				server.SetPayload([]byte(payload1))
+				server.AddPath("/").
+					SetPayload([]byte(payload1))
 				server.AddPath("/foo/bar").
 					SetPayload([]byte(payload2))
 
@@ -175,7 +120,8 @@ func TestPaths(t *testing.T) {
 				payload1 := "this is / payload"
 				payload2 := "this is /foo/bar payload"
 
-				server.SetPayload([]byte(payload1))
+				server.AddPath("/").
+					SetPayload([]byte(payload1))
 				server.AddPath("/foo/bar").
 					SetPayload([]byte(payload2))
 
