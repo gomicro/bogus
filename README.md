@@ -22,7 +22,6 @@ import "github.com/gomicro/bogus"
 			server = bogus.New()
 			server.SetPayload([]byte("some return payload"))
 			server.SetStatus(200)
-			server.Start()
 		})
 
 		g.It("should connect to a test server", func(){
@@ -47,7 +46,6 @@ import "github.com/gomicro/bogus"
 
 		g.BeforeEach(func(){
 			server = bogus.New()
-			server.Start()
 		})
 
 		g.It("should connect to a test server", func(){
