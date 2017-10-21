@@ -2,6 +2,7 @@ package bogus
 
 import (
 	"bytes"
+	"io/ioutil"
 	"net"
 	"net/http"
 	"testing"
@@ -82,6 +83,141 @@ func TestBogus(t *testing.T) {
 			Expect(thirdHit.Query["baz"]).To(HaveLen(1))
 			Expect(thirdHit.Query["baz"][0]).To(Equal("fiz"))
 			Expect(string(thirdHit.Body)).To(Equal("put body"))
+		})
+
+		g.It("should allow adding a new path", func() {
+			p1 := "some other payload"
+			s1 := http.StatusOK
+			server.AddPath("/").
+				SetPayload([]byte(p1)).
+				SetStatus(s1)
+
+			resp, err := http.Get("http://" + net.JoinHostPort(host, port))
+			Expect(err).NotTo(HaveOccurred())
+			defer resp.Body.Close()
+
+			Expect(resp.StatusCode).To(Equal(s1))
+			Expect(server.Hits()).To(Equal(1))
+		})
+
+		g.It("should return unique payloads per path", func() {
+			p1 := "some other payload"
+			server.AddPath("/").
+				SetPayload([]byte(p1))
+
+			p2 := "foobar"
+			server.AddPath("/foo/bar").
+				SetPayload([]byte(p2))
+
+			resp, err := http.Get("http://" + net.JoinHostPort(host, port))
+			Expect(err).NotTo(HaveOccurred())
+			defer resp.Body.Close()
+
+			body, err := ioutil.ReadAll(resp.Body)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(string(body)).To(Equal(p1))
+			Expect(server.Hits()).To(Equal(1))
+
+			resp, err = http.Get("http://" + net.JoinHostPort(host, port) + "/foo/bar")
+			Expect(err).NotTo(HaveOccurred())
+
+			body, err = ioutil.ReadAll(resp.Body)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(string(body)).To(Equal(p2))
+			Expect(server.Hits()).To(Equal(2))
+		})
+
+		g.It("should return 404 on an unregistered path", func() {
+			server.AddPath("/foo/bar").
+				SetPayload([]byte("this is /foo/bar payload"))
+
+			resp, err := http.Get("http://" + net.JoinHostPort(host, port) + "/foo/bar/baz")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(resp.StatusCode).To(Equal(http.StatusNotFound))
+			defer resp.Body.Close()
+
+			body, err := ioutil.ReadAll(resp.Body)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(string(body)).To(Equal("Not Found"))
+		})
+
+		g.It("shouldn't allow putting to a get path", func() {
+			p := "foo"
+			postData := "freakazoid"
+			server.AddPath("/spacebar").
+				SetPayload([]byte(p)).
+				SetStatus(http.StatusOK).
+				SetMethods("GET")
+
+			req, err := http.NewRequest("PUT", "http://"+net.JoinHostPort(host, port)+"/spacebar", bytes.NewReader([]byte(postData)))
+			Expect(err).NotTo(HaveOccurred())
+
+			client := &http.Client{}
+			resp, err := client.Do(req)
+			Expect(err).NotTo(HaveOccurred())
+			defer resp.Body.Close()
+
+			Expect(resp.StatusCode).To(Equal(http.StatusForbidden))
+		})
+
+		g.It("should allow putting to a put path", func() {
+			p := "foo"
+			postData := "live long and prosper"
+			server.AddPath("/force").
+				SetPayload([]byte(p)).
+				SetStatus(http.StatusCreated).
+				SetMethods("PUT")
+
+			req, err := http.NewRequest("PUT", "http://"+net.JoinHostPort(host, port)+"/force", bytes.NewReader([]byte(postData)))
+			Expect(err).NotTo(HaveOccurred())
+
+			client := &http.Client{}
+			resp, err := client.Do(req)
+			Expect(err).NotTo(HaveOccurred())
+			defer resp.Body.Close()
+
+			Expect(resp.StatusCode).To(Equal(http.StatusCreated))
+		})
+
+		g.It("should return a default status and payload", func() {
+			postData := []byte("topgear")
+			server.AddPath("/roadkill").
+				SetMethods("PUT")
+
+			req, err := http.NewRequest("PUT", "http://"+net.JoinHostPort(host, port)+"/roadkill", bytes.NewReader(postData))
+			Expect(err).NotTo(HaveOccurred())
+
+			client := &http.Client{}
+			resp, err := client.Do(req)
+			Expect(err).NotTo(HaveOccurred())
+			defer resp.Body.Close()
+
+			Expect(resp.StatusCode).To(Equal(http.StatusCreated))
+			respBody, err := ioutil.ReadAll(resp.Body)
+			Expect(err).To(BeNil())
+			Expect(respBody).To(Equal(postData))
+		})
+
+		g.It("should favor set status and payload over the defaults", func() {
+			postData := []byte("sellout")
+			payload := []byte("long live the stig")
+			server.AddPath("/grandtour").
+				SetMethods("PUT").
+				SetPayload(payload).
+				SetStatus(http.StatusOK)
+
+			req, err := http.NewRequest("PUT", "http://"+net.JoinHostPort(host, port)+"/grandtour", bytes.NewReader(postData))
+			Expect(err).NotTo(HaveOccurred())
+
+			client := &http.Client{}
+			resp, err := client.Do(req)
+			Expect(err).NotTo(HaveOccurred())
+			defer resp.Body.Close()
+
+			Expect(resp.StatusCode).To(Equal(http.StatusOK))
+			respBody, err := ioutil.ReadAll(resp.Body)
+			Expect(err).To(BeNil())
+			Expect(respBody).To(Equal(payload))
 		})
 	})
 }

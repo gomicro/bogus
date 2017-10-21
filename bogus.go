@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+
+	"github.com/gomicro/bogus/paths"
 )
 
 // HitRecord represents a recording of information from a single hit againstr
@@ -21,14 +23,14 @@ type HitRecord struct {
 type Bogus struct {
 	server     *httptest.Server
 	hits       int
-	paths      map[string]*Path
+	paths      map[string]*paths.Path
 	hitRecords []HitRecord
 }
 
 // New returns a newly intitated bogus server
 func New() *Bogus {
 	b := &Bogus{
-		paths: map[string]*Path{},
+		paths: map[string]*paths.Path{},
 	}
 	b.server = httptest.NewServer(http.HandlerFunc(b.HandlePaths))
 
@@ -37,9 +39,9 @@ func New() *Bogus {
 
 // AddPath adds a new path to the bogus server handler and returns the new path
 // for further configuration
-func (b *Bogus) AddPath(path string) *Path {
+func (b *Bogus) AddPath(path string) *paths.Path {
 	if _, ok := b.paths[path]; !ok {
-		b.paths[path] = &Path{}
+		b.paths[path] = paths.New()
 	}
 
 	return b.paths[path]
@@ -67,7 +69,7 @@ func (b *Bogus) HandlePaths(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if path.hasMethod(r.Method) {
+	if path.HasMethod(r.Method) {
 		var payload []byte
 		var status int
 
@@ -82,19 +84,19 @@ func (b *Bogus) HandlePaths(w http.ResponseWriter, r *http.Request) {
 			payload = []byte("")
 			status = http.StatusNoContent
 		case "", "GET":
-			payload = path.payload
+			payload = path.Payload
 			status = http.StatusOK
 		}
 
 		// Prefer set payload and status over default
-		if path.payload != nil {
-			payload = path.payload
+		if path.Payload != nil {
+			payload = path.Payload
 		}
-		if path.status != 0 {
-			status = path.status
+		if path.Status != 0 {
+			status = path.Status
 		}
 
-		path.hits++
+		path.Hits++
 		w.WriteHeader(status)
 		w.Write(payload)
 		return
