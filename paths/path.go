@@ -1,14 +1,15 @@
 package paths
 
 import (
+	"net/http"
 	"strings"
 )
 
 // Path represents an endpoint added to a bogus server and how it should respond
 type Path struct {
-	Payload []byte
 	Hits    int
-	Status  int
+	payload []byte
+	status  int
 	methods []string
 }
 
@@ -21,14 +22,14 @@ func New() *Path {
 // SetPayload sets the response payload for the path and returns the path for
 // additional configuration
 func (p *Path) SetPayload(payload []byte) *Path {
-	p.Payload = payload
+	p.payload = payload
 	return p
 }
 
 // SetStatus sets the http status for the path and returns the path for
 // additional configuration
 func (p *Path) SetStatus(status int) *Path {
-	p.Status = status
+	p.status = status
 	return p
 }
 
@@ -42,9 +43,23 @@ func (p *Path) SetMethods(methods ...string) *Path {
 	return p
 }
 
-// HasMethod returns true or false based on whether a path resonds to a given
-// method
-func (p *Path) HasMethod(method string) bool {
+func (p *Path) HandleRequest(w http.ResponseWriter, r *http.Request) {
+	payload := []byte("")
+	status := http.StatusForbidden
+
+	if p.hasMethod(r.Method) {
+		p.Hits++
+		w.WriteHeader(p.status)
+		w.Write(p.payload)
+		return
+	}
+
+	w.WriteHeader(status)
+	w.Write(payload)
+	return
+}
+
+func (p *Path) hasMethod(method string) bool {
 	method = strings.ToUpper(method)
 
 	// Check for configured methods first

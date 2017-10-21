@@ -31,21 +31,21 @@ func TestBogus(t *testing.T) {
 			p := New().
 				SetMethods("GET")
 
-			ok := p.HasMethod("GET")
+			ok := p.hasMethod("GET")
 			Expect(ok).To(BeTrue())
 
 			p.SetMethods("GET", "PUT")
 
-			ok = p.HasMethod("PUT")
+			ok = p.hasMethod("PUT")
 			Expect(ok).To(BeTrue())
 
-			ok = p.HasMethod("GET")
+			ok = p.hasMethod("GET")
 			Expect(ok).To(BeTrue())
 		})
 
 		g.It("should return true if a path has no methods and GET is checked for", func() {
 			p := New()
-			ok := p.HasMethod("GET")
+			ok := p.hasMethod("GET")
 			Expect(ok).To(BeTrue())
 		})
 
@@ -53,13 +53,13 @@ func TestBogus(t *testing.T) {
 			p := New().
 				SetMethods("GET", "PUT")
 
-			ok := p.HasMethod("PUT")
+			ok := p.hasMethod("PUT")
 			Expect(ok).To(BeTrue())
 
-			ok = p.HasMethod("GET")
+			ok = p.hasMethod("GET")
 			Expect(ok).To(BeTrue())
 
-			ok = p.HasMethod("POST")
+			ok = p.hasMethod("POST")
 			Expect(ok).To(BeFalse())
 		})
 
@@ -67,7 +67,7 @@ func TestBogus(t *testing.T) {
 			p := New().
 				SetMethods("PUT")
 
-			ok := p.HasMethod("GET")
+			ok := p.hasMethod("GET")
 			Expect(ok).To(BeFalse())
 		})
 	})

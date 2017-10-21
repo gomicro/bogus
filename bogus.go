@@ -3,6 +3,7 @@
 package bogus
 
 import (
+	"bytes"
 	"io/ioutil"
 	"net"
 	"net/http"
@@ -60,7 +61,8 @@ func (b *Bogus) HandlePaths(w http.ResponseWriter, r *http.Request) {
 	b.hits++
 
 	bodyBytes, _ := ioutil.ReadAll(r.Body)
-	r.Body.Close()
+	r.Body = ioutil.NopCloser(bytes.NewBuffer(bodyBytes))
+	defer r.Body.Close()
 
 	b.hitRecords = append(b.hitRecords, HitRecord{r.Method, r.URL.Path, r.URL.Query(), bodyBytes})
 
@@ -71,42 +73,7 @@ func (b *Bogus) HandlePaths(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if path.HasMethod(r.Method) {
-		var payload []byte
-		var status int
-
-		switch r.Method {
-		case "POST":
-			payload = bodyBytes
-			status = http.StatusAccepted
-		case "PUT":
-			payload = bodyBytes
-			status = http.StatusCreated
-		case "DELETE":
-			payload = []byte("")
-			status = http.StatusNoContent
-		case "", "GET":
-			payload = path.Payload
-			status = http.StatusOK
-		}
-
-		// Prefer set payload and status over default
-		if path.Payload != nil {
-			payload = path.Payload
-		}
-		if path.Status != 0 {
-			status = path.Status
-		}
-
-		path.Hits++
-		w.WriteHeader(status)
-		w.Write(payload)
-		return
-	}
-
-	w.WriteHeader(http.StatusForbidden)
-	w.Write([]byte(""))
-	return
+	path.HandleRequest(w, r)
 }
 
 // Hits returns the total number of hits seen against the bogus server
