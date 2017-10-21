@@ -45,6 +45,9 @@ func (p *Path) SetMethods(methods ...string) *Path {
 	return p
 }
 
+// HandleRequest writes to the response writer based how it is configured to
+// handle the request.  If it is not configured to handle the requet it will
+// return a forbidden status.
 func (p *Path) HandleRequest(w http.ResponseWriter, r *http.Request) {
 	payload := []byte("")
 	status := http.StatusForbidden
