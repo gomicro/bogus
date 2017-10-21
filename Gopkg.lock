@@ -7,6 +7,12 @@
   revision = "74c9fe110d4bfd04c222a089a309e0a97e258534"
 
 [[projects]]
+  name = "github.com/gomicro/penname"
+  packages = ["."]
+  revision = "7ae7787b1e2674d5cfc984988af4616721c66d90"
+  version = "v0.0.2"
+
+[[projects]]
   name = "github.com/onsi/gomega"
   packages = [".","format","internal/assertion","internal/asyncassertion","internal/testingtsupport","matchers","matchers/support/goraph/bipartitegraph","matchers/support/goraph/edge","matchers/support/goraph/node","matchers/support/goraph/util","types"]
   revision = "a78ae492d53aad5a7a232d0d0462c14c400e3ee7"
@@ -14,6 +20,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "c1470cc39598ad0a11ffeb32a3e5d24006da77143180f4b27267dc3edc05a307"
+  inputs-digest = "679f9a9268a5dc5e0b548fffeab1c543a5bdc8062e8c10ff5ac70e6709fa68ee"
   solver-name = "gps-cdcl"
   solver-version = 1

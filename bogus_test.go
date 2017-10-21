@@ -89,6 +89,7 @@ func TestBogus(t *testing.T) {
 			p1 := "some other payload"
 			s1 := http.StatusOK
 			server.AddPath("/").
+				SetMethods("GET").
 				SetPayload([]byte(p1)).
 				SetStatus(s1)
 
@@ -103,10 +104,12 @@ func TestBogus(t *testing.T) {
 		g.It("should return unique payloads per path", func() {
 			p1 := "some other payload"
 			server.AddPath("/").
+				SetMethods("GET").
 				SetPayload([]byte(p1))
 
 			p2 := "foobar"
 			server.AddPath("/foo/bar").
+				SetMethods("GET").
 				SetPayload([]byte(p2))
 
 			resp, err := http.Get("http://" + net.JoinHostPort(host, port))
