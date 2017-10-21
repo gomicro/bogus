@@ -140,43 +140,5 @@ func TestBogus(t *testing.T) {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(string(body)).To(Equal("Not Found"))
 		})
-
-		g.It("shouldn't allow putting to a get path", func() {
-			p := "foo"
-			postData := "freakazoid"
-			server.AddPath("/spacebar").
-				SetPayload([]byte(p)).
-				SetStatus(http.StatusOK).
-				SetMethods("GET")
-
-			req, err := http.NewRequest("PUT", "http://"+net.JoinHostPort(host, port)+"/spacebar", bytes.NewReader([]byte(postData)))
-			Expect(err).NotTo(HaveOccurred())
-
-			client := &http.Client{}
-			resp, err := client.Do(req)
-			Expect(err).NotTo(HaveOccurred())
-			defer resp.Body.Close()
-
-			Expect(resp.StatusCode).To(Equal(http.StatusForbidden))
-		})
-
-		g.It("should allow putting to a put path", func() {
-			p := "foo"
-			postData := "live long and prosper"
-			server.AddPath("/force").
-				SetPayload([]byte(p)).
-				SetStatus(http.StatusCreated).
-				SetMethods("PUT")
-
-			req, err := http.NewRequest("PUT", "http://"+net.JoinHostPort(host, port)+"/force", bytes.NewReader([]byte(postData)))
-			Expect(err).NotTo(HaveOccurred())
-
-			client := &http.Client{}
-			resp, err := client.Do(req)
-			Expect(err).NotTo(HaveOccurred())
-			defer resp.Body.Close()
-
-			Expect(resp.StatusCode).To(Equal(http.StatusCreated))
-		})
 	})
 }

@@ -16,7 +16,9 @@ type Path struct {
 // New returns a newly instantiated path object with everything initialized as
 // needed.
 func New() *Path {
-	return &Path{}
+	return &Path{
+		status: http.StatusOK,
+	}
 }
 
 // SetPayload sets the response payload for the path and returns the path for
@@ -62,20 +64,12 @@ func (p *Path) HandleRequest(w http.ResponseWriter, r *http.Request) {
 func (p *Path) hasMethod(method string) bool {
 	method = strings.ToUpper(method)
 
-	// Check for configured methods first
 	if len(p.methods) != 0 {
 		for _, m := range p.methods {
 			if m == method {
 				return true
 			}
 		}
-
-		return false
-	}
-
-	// If no methods configured, handle GET by default for convenience
-	if method == "GET" {
-		return true
 	}
 
 	return false
