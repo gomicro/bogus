@@ -7,57 +7,22 @@
 
 Bogus simplifies the creation of a mocked http server using the `net/http/httptest` package.  It allows the creation of one to many endpoints with unique responses.  The interactions of each endpoint are recorded for assertions.
 
+# Requirements
+Golang version 1.6 or higher
+
+# Installation
+
+```
+go get github.com/gomicro/bogus
+```
+
 # Usage
+See the [examples](https://godoc.org/github.com/gomicro/bogus#pkg-examples) within the docs for ways to use the library.
 
-Setting a payload and status against a root path
+# Versioning
+The library will be versioned in accordance with [Semver 2.0.0](http://semver.org).  See the [releases](https://github.com/gomicro/bogus/releases) section for the latest version.  Until version 1.0.0 the libary is considered to be unstable.
 
-```
-import "github.com/gomicro/bogus"
+It is always highly recommended to vendor the version you are using.
 
-...
-
-	g.Describe("Tests needing a test server", func(){
-		var server *bogus.Bogus
-
-		g.BeforeEach(func(){
-			server = bogus.New()
-			server.SetPayload([]byte("some return payload"))
-			server.SetStatus(200)
-		})
-
-		g.It("should connect to a test server", func(){
-			host, port := server.HostPort()
-
-			...
-
-			Expect(server.Hits()).To(Equal(1))
-		})
-	})
-```
-
-Setting a payload and status against a specific path
-
-```
-import "github.com/gomicro/bogus"
-
-...
-
-	g.Describe("Tests needing a test server", func(){
-		var server *bogus.Bogus
-
-		g.BeforeEach(func(){
-			server = bogus.New()
-		})
-
-		g.It("should connect to a test server", func(){
-			server.AddPath("/foo/bar").
-				SetPayload([]byte("some return payload")).
-				SetStatus(200)
-			host, port := server.HostPort()
-
-			...
-
-			Expect(server.Hits()).To(Equal(1))
-		})
-	})
-```
+# License
+See [LICENSE.md](./LICENSE.md) for more information.
