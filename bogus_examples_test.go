@@ -17,6 +17,7 @@ func ExampleBogus() {
 
 	server := bogus.New()
 	server.AddPath("/foo/bar").
+		SetMethods("GET").
 		SetPayload([]byte("some return payload")).
 		SetStatus(http.StatusOK)
 	host, port := server.HostPort()
@@ -60,6 +61,9 @@ func ExampleBogus_goblinGomega() {
 		})
 
 		g.It("should connect to a test server", func() {
+			server.AddPath("/").
+				SetMethods("GET")
+
 			host, port := server.HostPort()
 
 			_, err := http.Get(fmt.Sprintf("https://%v:%v", host, port))
@@ -77,6 +81,7 @@ func ExampleBogus_goblinGomega() {
 
 		g.It("should connect to a test server", func() {
 			server.AddPath("/foo/bar").
+				SetMethods("GET").
 				SetPayload([]byte("some return payload")).
 				SetStatus(http.StatusOK)
 			host, port := server.HostPort()

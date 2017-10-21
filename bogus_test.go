@@ -89,6 +89,7 @@ func TestBogus(t *testing.T) {
 			p1 := "some other payload"
 			s1 := http.StatusOK
 			server.AddPath("/").
+				SetMethods("GET").
 				SetPayload([]byte(p1)).
 				SetStatus(s1)
 
@@ -103,10 +104,12 @@ func TestBogus(t *testing.T) {
 		g.It("should return unique payloads per path", func() {
 			p1 := "some other payload"
 			server.AddPath("/").
+				SetMethods("GET").
 				SetPayload([]byte(p1))
 
 			p2 := "foobar"
 			server.AddPath("/foo/bar").
+				SetMethods("GET").
 				SetPayload([]byte(p2))
 
 			resp, err := http.Get("http://" + net.JoinHostPort(host, port))
@@ -139,85 +142,6 @@ func TestBogus(t *testing.T) {
 			body, err := ioutil.ReadAll(resp.Body)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(string(body)).To(Equal("Not Found"))
-		})
-
-		g.It("shouldn't allow putting to a get path", func() {
-			p := "foo"
-			postData := "freakazoid"
-			server.AddPath("/spacebar").
-				SetPayload([]byte(p)).
-				SetStatus(http.StatusOK).
-				SetMethods("GET")
-
-			req, err := http.NewRequest("PUT", "http://"+net.JoinHostPort(host, port)+"/spacebar", bytes.NewReader([]byte(postData)))
-			Expect(err).NotTo(HaveOccurred())
-
-			client := &http.Client{}
-			resp, err := client.Do(req)
-			Expect(err).NotTo(HaveOccurred())
-			defer resp.Body.Close()
-
-			Expect(resp.StatusCode).To(Equal(http.StatusForbidden))
-		})
-
-		g.It("should allow putting to a put path", func() {
-			p := "foo"
-			postData := "live long and prosper"
-			server.AddPath("/force").
-				SetPayload([]byte(p)).
-				SetStatus(http.StatusCreated).
-				SetMethods("PUT")
-
-			req, err := http.NewRequest("PUT", "http://"+net.JoinHostPort(host, port)+"/force", bytes.NewReader([]byte(postData)))
-			Expect(err).NotTo(HaveOccurred())
-
-			client := &http.Client{}
-			resp, err := client.Do(req)
-			Expect(err).NotTo(HaveOccurred())
-			defer resp.Body.Close()
-
-			Expect(resp.StatusCode).To(Equal(http.StatusCreated))
-		})
-
-		g.It("should return a default status and payload", func() {
-			postData := []byte("topgear")
-			server.AddPath("/roadkill").
-				SetMethods("PUT")
-
-			req, err := http.NewRequest("PUT", "http://"+net.JoinHostPort(host, port)+"/roadkill", bytes.NewReader(postData))
-			Expect(err).NotTo(HaveOccurred())
-
-			client := &http.Client{}
-			resp, err := client.Do(req)
-			Expect(err).NotTo(HaveOccurred())
-			defer resp.Body.Close()
-
-			Expect(resp.StatusCode).To(Equal(http.StatusCreated))
-			respBody, err := ioutil.ReadAll(resp.Body)
-			Expect(err).To(BeNil())
-			Expect(respBody).To(Equal(postData))
-		})
-
-		g.It("should favor set status and payload over the defaults", func() {
-			postData := []byte("sellout")
-			payload := []byte("long live the stig")
-			server.AddPath("/grandtour").
-				SetMethods("PUT").
-				SetPayload(payload).
-				SetStatus(http.StatusOK)
-
-			req, err := http.NewRequest("PUT", "http://"+net.JoinHostPort(host, port)+"/grandtour", bytes.NewReader(postData))
-			Expect(err).NotTo(HaveOccurred())
-
-			client := &http.Client{}
-			resp, err := client.Do(req)
-			Expect(err).NotTo(HaveOccurred())
-			defer resp.Body.Close()
-
-			Expect(resp.StatusCode).To(Equal(http.StatusOK))
-			respBody, err := ioutil.ReadAll(resp.Body)
-			Expect(err).To(BeNil())
-			Expect(respBody).To(Equal(payload))
 		})
 	})
 }
