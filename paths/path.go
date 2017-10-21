@@ -42,6 +42,8 @@ func (p *Path) SetMethods(methods ...string) *Path {
 	return p
 }
 
+// HasMethod returns true or false based on whether a path resonds to a given
+// method
 func (p *Path) HasMethod(method string) bool {
 	method = strings.ToUpper(method)
 

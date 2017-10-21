@@ -1,3 +1,5 @@
+// Package bogus provides a minimal set of helpers on top of the
+// net/http/httptest package
 package bogus
 
 import (
