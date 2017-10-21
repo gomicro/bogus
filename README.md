@@ -1,8 +1,9 @@
 # Bogus
 [![Build Status](https://travis-ci.org/gomicro/bogus.svg)](https://travis-ci.org/gomicro/bogus)
-[![Coverage](http://gocover.io/_badge/github.com/gomicro/bogus)](http://gocover.io/github.com/gomicro/bogus)
 [![Go Reportcard](https://goreportcard.com/badge/github.com/gomicro/bogus)](https://goreportcard.com/report/github.com/gomicro/bogus)
 [![GoDoc](https://godoc.org/github.com/gomicro/bogus?status.png)](https://godoc.org/github.com/gomicro/bogus)
+[![License](https://img.shields.io/github/license/gomicro/bogus.svg)](https://github.com/gomicro/bogus/blob/master/LICENSE.md)
+[![Release](https://img.shields.io/github/release/gomicro/bogus.svg)](https://github.com/gomicro/bogus/releases/latest)
 
 Bogus simplifies the creation of a mocked http server using the `net/http/httptest` package.  It allows the creation of one to many endpoints with unique responses.  The interactions of each endpoint are recorded for assertions.
 
