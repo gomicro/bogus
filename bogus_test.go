@@ -143,5 +143,28 @@ func TestBogus(t *testing.T) {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(string(body)).To(Equal("Not Found"))
 		})
+
+		g.It("should return unique headers per path", func() {
+			headers1 := map[string]string{"Content-Type": "plain/text"}
+			server.AddPath("/").
+				SetMethods("GET").
+				SetHeaders(headers1)
+
+			headers2 := map[string]string{"Content-Type": "application/json"}
+			server.AddPath("/foo/bar").
+				SetMethods("GET").
+				SetHeaders(headers2)
+
+			resp, err := http.Get("http://" + net.JoinHostPort(host, port))
+			Expect(err).NotTo(HaveOccurred())
+			defer resp.Body.Close()
+
+			Expect(resp.Header.Get("Content-Type")).To(Equal("plain/text"))
+
+			resp, err = http.Get("http://" + net.JoinHostPort(host, port) + "/foo/bar")
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(resp.Header.Get("Content-Type")).To(Equal("application/json"))
+		})
 	})
 }
