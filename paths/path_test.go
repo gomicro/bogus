@@ -32,6 +32,19 @@ func TestBogus(t *testing.T) {
 			})
 		})
 
+		g.Describe("Setting Headers", func() {
+			g.It("should allow setting headers for paths", func() {
+				headers := map[string]string{
+					"Content-Type": "plain/text",
+				}
+				p := New().
+					SetHeaders(headers)
+
+				Expect(p.headers["Content-Type"]).To(Equal("plain/text"))
+				Expect(p.headers).To(Equal(headers))
+			})
+		})
+
 		g.Describe("Setting Methods", func() {
 			g.It("should allow setting methods for paths", func() {
 				p := New().

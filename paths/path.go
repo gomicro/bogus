@@ -8,6 +8,7 @@ import (
 // Path represents an endpoint added to a bogus server and how it should respond
 type Path struct {
 	Hits    int
+	headers map[string]string
 	payload []byte
 	status  int
 	methods []string
@@ -19,6 +20,13 @@ func New() *Path {
 	return &Path{
 		status: http.StatusOK,
 	}
+}
+
+// SetHeaders sets the response headers for the path and returns the path for
+// additional configuration
+func (p *Path) SetHeaders(headers map[string]string) *Path {
+	p.headers = headers
+	return p
 }
 
 // SetPayload sets the response payload for the path and returns the path for
@@ -51,6 +59,10 @@ func (p *Path) SetMethods(methods ...string) *Path {
 func (p *Path) HandleRequest(w http.ResponseWriter, r *http.Request) {
 	payload := []byte("")
 	status := http.StatusForbidden
+
+	for header, value := range p.headers {
+		w.Header().Set(header, value)
+	}
 
 	if p.hasMethod(r.Method) {
 		p.Hits++
