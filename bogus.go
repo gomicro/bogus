@@ -1,13 +1,20 @@
+// Package bogus provides a minimal set of helpers on top of the
+// net/http/httptest package
 package bogus
 
 import (
+	"bytes"
 	"io/ioutil"
 	"net"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+
+	"github.com/gomicro/bogus/paths"
 )
 
+// HitRecord represents a recording of information from a single hit againstr
+// the bogus server
 type HitRecord struct {
 	Verb  string
 	Path  string
@@ -15,86 +22,72 @@ type HitRecord struct {
 	Body  []byte
 }
 
+// Bogus represents a test server
 type Bogus struct {
 	server     *httptest.Server
 	hits       int
-	paths      map[string]*Path
-	pathsHit   chan string
+	paths      map[string]*paths.Path
 	hitRecords []HitRecord
 }
 
+// New returns a newly intitated bogus server
 func New() *Bogus {
-	return &Bogus{paths: map[string]*Path{
-		"/": &Path{},
-	}}
+	b := &Bogus{
+		paths: map[string]*paths.Path{},
+	}
+	b.server = httptest.NewServer(http.HandlerFunc(b.HandlePaths))
+
+	return b
 }
 
-func (b *Bogus) AddPath(path string) *Path {
+// AddPath adds a new path to the bogus server handler and returns the new path
+// for further configuration
+func (b *Bogus) AddPath(path string) *paths.Path {
 	if _, ok := b.paths[path]; !ok {
-		b.paths[path] = &Path{}
+		b.paths[path] = paths.New()
 	}
 
 	return b.paths[path]
 }
 
+// Close calls the close method for the underlying httptest server
 func (b *Bogus) Close() {
 	b.server.Close()
 }
 
+// HandlePaths implements the http handler interface and decides how to respond
+// based on the paths configured
 func (b *Bogus) HandlePaths(w http.ResponseWriter, r *http.Request) {
-	// if we've registered the given path, let's use it.
-	// if we have only registered the / path, use that
-	// if we've registered more than / and we can't find what we got hit with,
-	//    return 404
-	bodyBytes, _ := ioutil.ReadAll(r.Body)
-	r.Body.Close()
-	b.hitRecords = append(b.hitRecords, HitRecord{r.Method, r.URL.Path, r.URL.Query(), bodyBytes})
-	b.pathsHit <- r.URL.Path
-	var path *Path
-	var ok bool
-	if path, ok = b.paths[r.URL.Path]; !ok {
-		if path, ok = b.paths["/"]; !ok || len(b.paths) != 1 {
-			path = &Path{[]byte("Not Found"), 1, http.StatusNotFound}
-		}
-	}
-	w.WriteHeader(path.status)
 	b.hits++
-	path.hits++
-	w.Write(path.payload)
+
+	bodyBytes, _ := ioutil.ReadAll(r.Body)
+	r.Body = ioutil.NopCloser(bytes.NewBuffer(bodyBytes))
+	defer r.Body.Close()
+
+	b.hitRecords = append(b.hitRecords, HitRecord{r.Method, r.URL.Path, r.URL.Query(), bodyBytes})
+
+	path, ok := b.paths[r.URL.Path]
+	if !ok {
+		w.WriteHeader(http.StatusNotFound)
+		w.Write([]byte("Not Found"))
+		return
+	}
+
+	path.HandleRequest(w, r)
 }
 
+// Hits returns the total number of hits seen against the bogus server
 func (b *Bogus) Hits() int {
 	return b.hits
 }
 
+// HitRecords returns a slice of the hit records recorded for inspection
 func (b *Bogus) HitRecords() []HitRecord {
 	return b.hitRecords
 }
 
+// HostPort returns the host and port number of the bogus server
 func (b *Bogus) HostPort() (string, string) {
 	h, p, _ := net.SplitHostPort(b.server.URL[7:])
 	return h, p
-}
-
-func (b *Bogus) PathHit() string {
-	return <-b.pathsHit
-}
-
-func (b *Bogus) SetPayload(p []byte) {
-	path := b.paths["/"]
-	if path != nil {
-		path.payload = p
-	}
-}
-
-func (b *Bogus) SetStatus(s int) {
-	path := b.paths["/"]
-	if path != nil {
-		path.status = s
-	}
-}
-
-func (b *Bogus) Start() {
-	b.server = httptest.NewServer(http.HandlerFunc(b.HandlePaths))
-	b.pathsHit = make(chan string, 1000)
 }
