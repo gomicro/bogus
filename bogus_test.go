@@ -56,6 +56,7 @@ func TestBogus(t *testing.T) {
 				"http://"+net.JoinHostPort(host, port)+"/foo/bar/cool?foo=bar&baz=fiz",
 				bytes.NewBuffer([]byte("put body")))
 			Expect(err).NotTo(HaveOccurred())
+			req.Header.Add("X-CustomHeader01", "custom value 01")
 			client := http.Client{}
 			resp, err = client.Do(req)
 			Expect(err).NotTo(HaveOccurred())
@@ -83,6 +84,7 @@ func TestBogus(t *testing.T) {
 			Expect(thirdHit.Query["baz"]).To(HaveLen(1))
 			Expect(thirdHit.Query["baz"][0]).To(Equal("fiz"))
 			Expect(string(thirdHit.Body)).To(Equal("put body"))
+			Expect(thirdHit.Header.Get("X-CustomHeader01")).To(Equal("custom value 01"))
 		})
 
 		g.It("should allow adding a new path", func() {
