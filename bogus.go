@@ -66,10 +66,10 @@ func (b *Bogus) HandlePaths(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
 	b.hitRecords = append(b.hitRecords, HitRecord{
-		Verb: r.Method,
-		Path: r.URL.Path,
-		Query: r.URL.Query(),
-		Body: bodyBytes,
+		Verb:   r.Method,
+		Path:   r.URL.Path,
+		Query:  r.URL.Query(),
+		Body:   bodyBytes,
 		Header: r.Header,
 	})
 
