@@ -25,6 +25,14 @@ all: test
 clean: ## Clean out all generated items
 	-@$(GOCLEAN)
 
+.PHONY: analyze
+analyze:
+	@echo "Downloading latest Ionize"
+	@wget --quiet https://s3.amazonaws.com/public.ionchannel.io/files/ionize/linux/bin/ionize
+	@chmod +x ionize && mkdir -p $$HOME/.local/bin && mv ionize $$HOME/.local/bin
+	@echo "Performing Ionize analyze"
+	ionize analyze
+
 .PHONY: coverage
 coverage: ## Generates the total code coverage of the project
 	@$(eval COVERAGE_DIR=$(shell mktemp -d))
@@ -32,7 +40,7 @@ coverage: ## Generates the total code coverage of the project
 	@for j in $$(go list ./... | grep -v '/vendor/' | grep -v '/ext/'); do go test -covermode=count -coverprofile=$(COVERAGE_DIR)/$$(basename $$j).out $$j > /dev/null 2>&1; done
 	@echo 'mode: count' > $(COVERAGE_DIR)/tmp/full.out
 	@tail -q -n +2 $(COVERAGE_DIR)/*.out >> $(COVERAGE_DIR)/tmp/full.out
-	@$(GOCMD) tool cover -func=$(COVERAGE_DIR)/tmp/full.out | tail -n 1 | sed -e 's/^.*statements)[[:space:]]*//' -e 's/%//'
+	@$(GOCMD) tool cover -func=$(COVERAGE_DIR)/tmp/full.out | tail -n 1 | sed -e 's/^.*statements)[[:space:]]*//' -e 's/%//' | tee coverage.txt
 
 .PHONY: fmt
 fmt: ## Run go fmt
