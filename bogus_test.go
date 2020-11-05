@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"net"
 	"net/http"
+	"net/url"
 	"testing"
 
 	. "github.com/franela/goblin"
@@ -96,6 +97,23 @@ func TestBogus(t *testing.T) {
 				SetStatus(s1)
 
 			resp, err := http.Get("http://" + net.JoinHostPort(host, port))
+			Expect(err).NotTo(HaveOccurred())
+			defer resp.Body.Close()
+
+			Expect(resp.StatusCode).To(Equal(s1))
+			Expect(server.Hits()).To(Equal(1))
+		})
+
+		g.It("should allow expecting url params", func() {
+			p1 := "some other payload"
+			s1 := http.StatusOK
+			server.AddPath("/").
+				SetMethods("GET").
+				SetParams(url.Values{"q": []string{"value"}}).
+				SetPayload([]byte(p1)).
+				SetStatus(s1)
+
+			resp, err := http.Get("http://" + net.JoinHostPort(host, port) + "?q=value")
 			Expect(err).NotTo(HaveOccurred())
 			defer resp.Body.Close()
 
