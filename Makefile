@@ -12,8 +12,10 @@ VERSION = 0.0.1
 GOCMD = go
 GOBUILD = $(GOCMD) build
 GOCLEAN = $(GOCMD) clean
-GOTEST = $(GOCMD) test -v $(shell $(GOCMD) list ./... | grep -v /vendor/)
-GOFMT = go fmt
+GOTEST = $(GOCMD) test ./...
+GOFMT = $(GOCMD) fmt
+GOVET = $(GOCMD) vet
+GOLINTCMD = golint
 CGO_ENABLED ?= 0
 GOOS ?= $(shell uname -s | tr '[:upper:]' '[:lower:]')
 
@@ -42,10 +44,6 @@ coverage: ## Generates the total code coverage of the project
 	@tail -q -n +2 $(COVERAGE_DIR)/*.out >> $(COVERAGE_DIR)/tmp/full.out
 	@$(GOCMD) tool cover -func=$(COVERAGE_DIR)/tmp/full.out | tail -n 1 | sed -e 's/^.*statements)[[:space:]]*//' -e 's/%//' | tee coverage.txt
 
-.PHONY: fmt
-fmt: ## Run go fmt
-	$(GOFMT)
-
 .PHONY: help
 help: ## Show This Help
 	@for line in $$(cat Makefile | grep "##" | grep -v "grep" | sed  "s/:.*##/:/g" | sed "s/\ /!/g"); do verb=$$(echo $$line | cut -d ":" -f 1); desc=$$(echo $$line | cut -d ":" -f 2 | sed "s/!/\ /g"); printf "%-30s--%s\n" "$$verb" "$$desc"; done
@@ -56,3 +54,18 @@ test: unit_test ## Run all available tests
 .PHONY: unit_test
 unit_test: ## Run all available unit tests
 	$(GOTEST)
+
+.PHONY: fmt
+fmt: ## Run gofmt
+	@echo "checking formatting..."
+	@$(GOFMT) $(shell $(GOLIST) ./... | grep -v '/vendor/')
+
+.PHONY: vet
+vet: ## Run go vet
+	@echo "vetting..."
+	@$(GOVET) $(shell $(GOLIST) ./... | grep -v '/vendor/')
+
+.PHONY: lint
+lint: ## Run golint
+	@echo "linting..."
+	@$(GOLINTCMD) -set_exit_status $(shell $(GOLIST) ./... | grep -v '/vendor/')
