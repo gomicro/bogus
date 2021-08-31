@@ -8,12 +8,12 @@ import (
 	"net/url"
 	"testing"
 
-	. "github.com/franela/goblin"
+	"github.com/franela/goblin"
 	. "github.com/onsi/gomega"
 )
 
 func TestBogus(t *testing.T) {
-	g := Goblin(t)
+	g := goblin.Goblin(t)
 	RegisterFailHandler(func(m string, _ ...int) { g.Fail(m) })
 
 	g.Describe("Bogus Functions", func() {
@@ -46,7 +46,7 @@ func TestBogus(t *testing.T) {
 			Expect(err).NotTo(HaveOccurred())
 			defer resp.Body.Close()
 
-			resp, err = http.Post(
+			_, err = http.Post(
 				"http://"+net.JoinHostPort(host, port)+"/foo/bar",
 				"application/octet-stream",
 				bytes.NewBuffer([]byte("post body")))
@@ -59,7 +59,7 @@ func TestBogus(t *testing.T) {
 			Expect(err).NotTo(HaveOccurred())
 			req.Header.Add("X-CustomHeader01", "custom value 01")
 			client := http.Client{}
-			resp, err = client.Do(req)
+			_, err = client.Do(req)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(server.HitRecords()).To(HaveLen(3))

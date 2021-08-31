@@ -76,7 +76,7 @@ func (b *Bogus) HandlePaths(w http.ResponseWriter, r *http.Request) {
 	path, ok := b.paths[r.URL.Path]
 	if !ok {
 		w.WriteHeader(http.StatusNotFound)
-		w.Write([]byte("Not Found"))
+		w.Write([]byte("Not Found")) //nolint,errcheck
 		return
 	}
 

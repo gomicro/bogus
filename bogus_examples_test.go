@@ -2,12 +2,13 @@ package bogus_test
 
 import (
 	"fmt"
-	"github.com/gomicro/bogus"
 	"io/ioutil"
 	"net/http"
 	"testing"
 
-	. "github.com/franela/goblin"
+	"github.com/gomicro/bogus"
+
+	"github.com/franela/goblin"
 	. "github.com/onsi/gomega"
 )
 
@@ -50,7 +51,7 @@ func ExampleBogus_goblinGomega() {
 	// This would normally be provided by a normal testing function setup
 	var t *testing.T
 
-	g := Goblin(t)
+	g := goblin.Goblin(t)
 	RegisterFailHandler(func(m string, _ ...int) { g.Fail(m) })
 
 	g.Describe("Tests needing a test server", func() {
