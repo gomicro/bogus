@@ -4,13 +4,13 @@ import (
 	"net/http"
 	"testing"
 
-	. "github.com/franela/goblin"
+	"github.com/franela/goblin"
 	"github.com/gomicro/penname"
 	. "github.com/onsi/gomega"
 )
 
 func TestBogus(t *testing.T) {
-	g := Goblin(t)
+	g := goblin.Goblin(t)
 	RegisterFailHandler(func(m string, _ ...int) { g.Fail(m) })
 
 	g.Describe("Paths", func() {
