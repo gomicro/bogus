@@ -78,13 +78,13 @@ func (p *Path) HandleRequest(w http.ResponseWriter, r *http.Request) {
 			passed, ok := vars[param]
 			if !ok {
 				w.WriteHeader(status)
-				w.Write(payload)
+				w.Write(payload) //nolint,errcheck
 				return
 			}
 
 			if strings.Join(passed, "") != strings.Join(value, "") {
 				w.WriteHeader(status)
-				w.Write(payload)
+				w.Write(payload) //nolint,errcheck
 				return
 			}
 		}
@@ -93,13 +93,12 @@ func (p *Path) HandleRequest(w http.ResponseWriter, r *http.Request) {
 	if p.hasMethod(r.Method) {
 		p.Hits++
 		w.WriteHeader(p.status)
-		w.Write(p.payload)
+		w.Write(p.payload) //nolint,errcheck
 		return
 	}
 
 	w.WriteHeader(status)
-	w.Write(payload)
-	return
+	w.Write(payload) //nolint,errcheck
 }
 
 func (p *Path) hasMethod(method string) bool {
